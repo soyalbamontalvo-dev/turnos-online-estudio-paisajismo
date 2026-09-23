@@ -307,7 +307,10 @@ export default function HomePage() {
           <p className="brand-name">Estudio Paisaje</p>
           <p className="brand-subtitle">Agenda de visitas y consultoría</p>
         </div>
-        <button className="ghost-button" type="button" onClick={() => document.getElementById("booking")?.scrollIntoView({ behavior: "smooth" })}>Reservar</button>
+        <nav className="top-actions" aria-label="Accesos de la demo">
+          <a className="nav-link" href="/gestionar">Gestionar turno</a>
+          <a className="ghost-button" href="/dashboard">Panel interno</a>
+        </nav>
       </header>
 
       <section className="hero">
@@ -415,10 +418,13 @@ export default function HomePage() {
           <span className="confirmation-icon">✓</span>
           <p className="overline">Reserva confirmada</p>
           <h2>Tu visita ya está en la agenda.</h2>
-          <p>Guarda este código para gestionar la cita cuando incorporemos esa función en la siguiente fase.</p>
+          <p>Guarda este código: ya puedes consultar, reprogramar o cancelar la cita desde “Gestionar turno”.</p>
           <div className="reservation-code">{confirmedAppointment.code}</div>
           <div className="confirmation-details"><span>{selectedService.title}</span><strong>{selectedDateLabel} · {confirmedAppointment.time}</strong><span>{selectedProfessional.name}</span></div>
-          <button type="button" className="secondary-button" onClick={startNewBooking}>Hacer otra reserva</button>
+          <div className="confirmation-actions">
+            <a className="secondary-button" href="/gestionar">Gestionar esta reserva</a>
+            <button type="button" className="secondary-button" onClick={startNewBooking}>Hacer otra reserva</button>
+          </div>
         </section>
       )}
 
