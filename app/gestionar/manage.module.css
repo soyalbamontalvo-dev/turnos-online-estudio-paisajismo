@@ -1,0 +1,159 @@
+.shell {
+  width: min(100%, 980px);
+  margin: 0 auto;
+  padding: 22px 18px 64px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 34px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--foliage);
+  text-decoration: none;
+}
+
+.mark {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px 14px 14px 4px;
+  background: var(--foliage);
+  color: #fff;
+  font-family: var(--font-outfit), sans-serif;
+  font-weight: 800;
+}
+
+.brand strong,
+.hero h1,
+.card h2,
+.appointment h2,
+.day strong,
+.slot strong {
+  font-family: var(--font-outfit), sans-serif;
+}
+
+.brand strong { display: block; }
+.brand span { display: block; margin-top: 2px; color: var(--muted); font-size: .72rem; }
+
+.back {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--foliage);
+  background: rgba(255,253,248,.82);
+  text-decoration: none;
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.hero { margin-bottom: 22px; }
+.kicker { margin: 0; color: var(--terracotta); font-size: .72rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.hero h1 { margin: 9px 0 0; max-width: 620px; color: var(--foliage); font-size: clamp(2.35rem, 11vw, 4.6rem); line-height: .95; letter-spacing: -.045em; }
+.heroText { max-width: 590px; margin: 16px 0 0; color: var(--muted); font-size: .92rem; line-height: 1.7; }
+
+.card,
+.appointment {
+  padding: 20px;
+  border: 1px solid rgba(30,58,47,.1);
+  border-radius: 26px;
+  background: rgba(255,253,248,.95);
+  box-shadow: var(--shadow);
+}
+
+.card h2,
+.appointment h2 { margin: 0; color: var(--foliage); font-size: 1.45rem; letter-spacing: -.02em; }
+.cardIntro { margin: 7px 0 18px; color: var(--muted); font-size: .8rem; line-height: 1.6; }
+
+.searchForm { display: grid; gap: 10px; }
+.searchForm input {
+  width: 100%;
+  min-height: 54px;
+  padding: 0 15px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--surface);
+  color: var(--charcoal);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.primary,
+.secondary,
+.danger {
+  min-height: 50px;
+  padding: 0 17px;
+  border-radius: 14px;
+  font-weight: 800;
+}
+
+.primary { border: 0; background: var(--terracotta); color: #fff; box-shadow: 0 10px 22px rgba(184,93,56,.16); }
+.secondary { border: 1px solid var(--line); background: var(--surface); color: var(--foliage); }
+.danger { border: 1px solid rgba(184,93,56,.24); background: rgba(184,93,56,.08); color: #963f25; }
+
+.hint { margin: 12px 0 0; color: var(--muted); font-size: .7rem; line-height: 1.5; }
+.error,
+.success { margin: 14px 0 0; padding: 12px 14px; border-radius: 14px; font-size: .78rem; line-height: 1.5; }
+.error { background: rgba(184,93,56,.1); color: #8d3e24; }
+.success { background: rgba(125,157,133,.14); color: var(--foliage); }
+
+.appointment { margin-top: 16px; }
+.appointmentTop { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+.status { display: inline-flex; align-items: center; min-height: 30px; padding: 0 10px; border-radius: 999px; background: rgba(125,157,133,.15); color: var(--foliage); font-size: .68rem; font-weight: 800; text-transform: capitalize; }
+.statusCancelled { background: rgba(184,93,56,.1); color: #8d3e24; }
+
+.code { margin: 5px 0 0; color: var(--terracotta); font-size: .76rem; font-weight: 800; letter-spacing: .06em; }
+.details { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+.detail { min-width: 0; padding: 13px; border-radius: 16px; background: rgba(125,157,133,.08); }
+.detail span { display: block; color: var(--muted); font-size: .62rem; letter-spacing: .06em; text-transform: uppercase; }
+.detail strong { display: block; margin-top: 5px; color: var(--foliage); font-size: .78rem; line-height: 1.4; overflow-wrap: anywhere; }
+.actions { display: grid; gap: 9px; margin-top: 18px; }
+
+.reschedule { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+.reschedule h3 { margin: 0; color: var(--foliage); font-family: var(--font-outfit), sans-serif; font-size: 1.08rem; }
+.reschedule p { margin: 5px 0 14px; color: var(--muted); font-size: .75rem; line-height: 1.5; }
+
+.days { display: grid; grid-auto-flow: column; grid-auto-columns: 72px; gap: 8px; overflow-x: auto; padding-bottom: 7px; scrollbar-width: none; }
+.days::-webkit-scrollbar { display: none; }
+.day { min-height: 88px; padding: 9px 6px; border: 1px solid var(--line); border-radius: 17px; background: var(--surface); color: var(--foliage); }
+.day span,
+.day small { display: block; color: var(--muted); font-size: .66rem; text-transform: capitalize; }
+.day strong { display: block; margin: 4px 0 2px; font-size: 1.35rem; }
+.dayActive { border-color: var(--terracotta); background: var(--terracotta); color: #fff; }
+.dayActive span,
+.dayActive small { color: rgba(255,255,255,.78); }
+
+.slots { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 12px; }
+.slot { min-height: 60px; border: 1px solid var(--line); border-radius: 15px; background: var(--surface); color: var(--foliage); }
+.slot strong { display: block; }
+.slot span { display: block; margin-top: 2px; color: var(--sage); font-size: .64rem; font-weight: 700; }
+.slot:disabled { opacity: .42; border-style: dashed; }
+.slotActive { border-color: var(--terracotta); background: rgba(184,93,56,.08); color: var(--terracotta); }
+.rescheduleActions { display: grid; gap: 9px; margin-top: 14px; }
+
+@media (min-width: 720px) {
+  .shell { padding: 30px 30px 78px; }
+  .card, .appointment { padding: 30px; border-radius: 32px; }
+  .searchForm { grid-template-columns: 1fr auto; }
+  .primary { min-width: 170px; }
+  .details { grid-template-columns: repeat(4,minmax(0,1fr)); }
+  .actions { grid-template-columns: repeat(2, max-content); }
+  .days { grid-auto-flow: initial; grid-template-columns: repeat(6,1fr); overflow: visible; }
+  .slots { grid-template-columns: repeat(3,1fr); }
+  .rescheduleActions { grid-template-columns: max-content max-content; }
+}
+
+@media (min-width: 980px) {
+  .slots { grid-template-columns: repeat(6,1fr); }
+}
