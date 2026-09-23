@@ -1,20 +1,32 @@
 # Turnos online — Estudio de paisajismo
 
-Demo frontend de un sistema de reserva de turnos y agenda para un estudio de paisajismo.
-
-La aplicación está diseñada con enfoque **mobile-first**, para que la experiencia principal funcione cómodamente desde un teléfono móvil.
+Demo frontend de un sistema de reserva y gestión de turnos para un estudio de paisajismo, diseñada con enfoque **mobile-first**.
 
 ## Cómo probar la demo
 
-1. Abre la URL de previsualización facilitada para el proyecto.
-2. Selecciona el tipo de servicio.
-3. Elige uno de los profesionales disponibles.
-4. Selecciona una fecha en el calendario semanal.
-5. Escoge uno de los horarios disponibles.
-6. Los horarios ya ocupados aparecen deshabilitados y no pueden seleccionarse.
-7. Recarga la página para comprobar que la selección realizada se mantiene.
+### Reservar una cita
 
-La demo guarda la información en el propio navegador mediante `localStorage`. No utiliza backend ni base de datos externa.
+1. Abre la URL de previsualización del proyecto.
+2. Selecciona un servicio.
+3. Elige un profesional.
+4. Selecciona fecha y horario disponible.
+5. Completa nombre, teléfono y correo electrónico.
+6. Confirma la reserva.
+7. Guarda el código generado, por ejemplo `PAIS-ABC123`.
+
+La cita queda guardada en `localStorage` y el horario seleccionado pasa a mostrarse como ocupado.
+
+### Gestionar una cita
+
+Pulsa **“Gestionar turno”** en la aplicación.
+
+1. Introduce el código de reserva.
+2. Consulta servicio, profesional, fecha, hora y estado.
+3. Puedes **reprogramar** la cita seleccionando un nuevo día y horario disponible.
+4. También puedes **cancelar** la cita.
+5. Al cancelar o reprogramar, el hueco horario anterior queda disponible inmediatamente en la demo.
+
+Para probar esta pantalla sin crear una cita nueva puedes utilizar el código `DEMO01`.
 
 ## Servicios incluidos
 
@@ -22,36 +34,35 @@ La demo guarda la información en el propio navegador mediante `localStorage`. N
 - **Consultoría de diseño botánico** — 75 min.
 - **Supervisión de riego y siembra** — 45 min.
 
-Se incluyen profesionales y citas de ejemplo realistas para que la aplicación pueda probarse sin configurar nada previamente.
+La demo incluye profesionales y citas de ejemplo realistas.
 
 ## Funcionalidades disponibles actualmente
 
-- Selección de servicio.
-- Selección de profesional.
+- Selección de servicio y profesional.
 - Calendario semanal navegable.
-- Selección de fecha.
-- Selección de horario disponible.
-- Horarios ocupados deshabilitados.
-- Disponibilidad adaptada al profesional seleccionado.
-- Resumen de la selección realizada.
-- Persistencia de la selección mediante `localStorage`.
-- Datos de ejemplo precargados.
+- Horarios disponibles y ocupados.
+- Creación de citas demo.
+- Código único de reserva.
+- Persistencia mediante `localStorage`.
+- Consulta de reserva mediante código.
+- Cancelación de citas.
+- Reprogramación de citas.
+- Liberación inmediata del hueco anterior al cancelar o reprogramar.
+- Prevención de doble reserva dentro del mismo almacenamiento local.
 - Diseño responsive con prioridad móvil.
 - Identidad visual basada en el briefing del cliente.
 
 ## Restablecer la demo y recuperar los datos de ejemplo
 
-Como esta versión funciona con `localStorage`, las pruebas realizadas quedan guardadas en el navegador.
+Las pruebas quedan guardadas en el navegador mediante `localStorage`.
 
-Para volver al estado inicial de la demo:
+Para volver al estado inicial:
 
-1. Abre la aplicación en el navegador.
-2. Borra los datos del sitio o el almacenamiento local correspondiente a esta URL desde la configuración del navegador.
+1. Abre la aplicación.
+2. Borra los datos del sitio o el almacenamiento local correspondiente a la URL de la demo desde la configuración del navegador.
 3. Recarga la página.
 
-Al volver a cargar la aplicación sin datos guardados, se utilizará nuevamente el estado inicial y los datos de ejemplo incluidos en la demo.
-
-> En una fase posterior se podrá incorporar también un botón visible **“Restablecer demo”** para realizar este proceso directamente desde la propia aplicación, sin necesidad de entrar en la configuración del navegador.
+Al volver a cargar sin datos guardados, se restauran los datos de ejemplo incluidos en la aplicación.
 
 ## Identidad visual aplicada
 
@@ -61,39 +72,27 @@ Al volver a cargar la aplicación sin datos guardados, se utilizará nuevamente 
 - Verde Salvia: `#7D9D85`
 - Gris Carbón: `#23272A`
 - Titulares, números y destacados: **Outfit**
-- Textos de lectura, formularios y controles: **Plus Jakarta Sans**
+- Textos, formularios y controles: **Plus Jakarta Sans**
 
 ## Funcionalidades previstas en siguientes fases
 
 Todavía no se incluyen:
 
-- creación definitiva de la cita;
-- formulario final de datos del cliente;
-- código de reserva;
-- cancelación y reprogramación mediante código;
-- panel interno de agenda;
+- dashboard interno del estudio;
+- agenda interna por profesional y día;
 - bloqueos de disponibilidad desde el panel;
-- estadísticas de ausencias;
+- listado y búsqueda interna de citas;
+- marcación de ausencias y estadística automática;
+- exportación;
 - recordatorios simulados a 48 h y 3 h;
-- integraciones reales con WhatsApp, correo o bases de datos externas.
+- botón interno para restablecer la demo;
+- integraciones reales con WhatsApp, correo o base de datos externa.
 
-## Persistencia de datos
+## Persistencia y alcance técnico
 
 La demo **no utiliza backend ni base de datos externa**. Los datos se guardan en `localStorage`, dentro del navegador y dispositivo desde el que se utiliza la aplicación.
 
-Esto permite demostrar el funcionamiento sin configurar servicios externos. Los datos guardados en un navegador no se comparten automáticamente con otros dispositivos o navegadores.
-
-## Alcance técnico acordado
-
-Esta versión frontend se entrega sin conexiones reales a:
-
-- WhatsApp Business API;
-- SMTP/correo electrónico;
-- pagos;
-- base de datos centralizada;
-- dominio definitivo.
-
-Las interacciones que dependan de estos servicios se simularán visualmente dentro de la demo. Kodarvia asumirá posteriormente la conexión de los servicios reales, la base de datos centralizada, el dominio y la redacción legal definitiva.
+Los datos de distintos dispositivos no se sincronizan entre sí. Las conexiones reales con WhatsApp Business API, SMTP y base de datos centralizada serán realizadas posteriormente por Kodarvia, junto con el dominio y la redacción legal definitiva.
 
 ## Tecnología
 
@@ -101,8 +100,8 @@ Las interacciones que dependan de estos servicios se simularán visualmente dent
 - React
 - TypeScript
 - `localStorage`
-- GitHub para el código fuente
-- Vercel para previsualización y despliegue
+- GitHub
+- Vercel
 
 ## Ejecutar el proyecto en local
 
@@ -113,7 +112,7 @@ npm install
 npm run dev
 ```
 
-Después, abre en el navegador la dirección indicada por Next.js, normalmente:
+Después abre la dirección indicada por Next.js, normalmente:
 
 ```text
 http://localhost:3000
@@ -121,6 +120,6 @@ http://localhost:3000
 
 ## Estado del proyecto
 
-**Fase 2 — Selección de fecha y horario.**
+**Fase 4 — Gestión de reservas mediante código.**
 
-El proyecto se desarrolla por fases. Cada fase se revisa antes de continuar para comprobar funcionalidad, diseño responsive, identidad visual y cumplimiento del briefing del cliente.
+El proyecto se desarrolla por fases. Antes de avanzar se revisan funcionalidad, responsive mobile-first, identidad visual y cumplimiento del briefing del cliente.
