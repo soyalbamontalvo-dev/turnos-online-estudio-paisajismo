@@ -22,18 +22,22 @@ button, select, input, textarea { font: inherit; }
 button, select { -webkit-tap-highlight-color: transparent; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
-button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible {
+a { color: inherit; }
+button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible {
   outline: 3px solid rgba(184, 93, 56, 0.28);
   outline-offset: 2px;
 }
 
 .page-shell { width: min(100%, 1180px); margin: 0 auto; padding: 18px 18px 52px; }
-.topbar { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding: 8px 0 22px; }
+.topbar { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px; padding: 8px 0 22px; }
 .brand-mark { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 14px 14px 14px 4px; background: var(--foliage); color: #fff; font-family: var(--font-outfit), sans-serif; font-size: 1.2rem; font-weight: 700; }
 .brand-name, .brand-subtitle, .eyebrow, .overline, .hero-copy, .service-card span, .trust-strip span, .demo-hint, .form-error { margin: 0; }
 .brand-name { font-family: var(--font-outfit), sans-serif; font-weight: 700; line-height: 1.1; }
 .brand-subtitle { margin-top: 3px; color: var(--muted); font-size: .72rem; }
-.ghost-button { min-height: 42px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,253,248,.82); color: var(--foliage); font-size: .76rem; font-weight: 800; }
+.top-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.nav-link, .ghost-button { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; padding: 0 14px; border-radius: 999px; font-size: .76rem; font-weight: 800; text-decoration: none; }
+.nav-link { color: var(--foliage); }
+.ghost-button { border: 1px solid var(--line); background: rgba(255,253,248,.82); color: var(--foliage); }
 
 .hero { padding: 26px 0 32px; }
 .eyebrow, .overline { color: var(--terracotta); font-size: .72rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
@@ -114,7 +118,8 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
 .reservation-code { display: inline-block; margin: 18px 0 14px; padding: 12px 16px; border: 1px dashed rgba(255,255,255,.38); border-radius: 14px; font-family: var(--font-outfit), sans-serif; font-size: 1.2rem; font-weight: 800; letter-spacing: .08em; background: rgba(255,255,255,.08); }
 .confirmation-details { display: grid; gap: 4px; margin: 0 auto 18px; color: rgba(255,255,255,.78); font-size: .78rem; }
 .confirmation-details strong { color: #fff; font-size: .9rem; text-transform: capitalize; }
-.secondary-button { min-height: 46px; padding: 0 17px; border: 1px solid rgba(255,255,255,.28); border-radius: 14px; background: transparent; color: #fff; font-weight: 800; }
+.confirmation-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.secondary-button { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; padding: 0 17px; border: 1px solid rgba(255,255,255,.28); border-radius: 14px; background: transparent; color: #fff; font-weight: 800; text-decoration: none; }
 
 .trust-strip { display: grid; gap: 10px; padding: 20px 2px 0; }
 .trust-strip > div { display: grid; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--line); }
@@ -123,8 +128,10 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
 
 @media (min-width: 720px) {
   .page-shell { padding: 28px 30px 70px; }
+  .topbar { grid-template-columns: auto 1fr auto; }
+  .top-actions { grid-column: auto; flex-wrap: nowrap; }
   .brand-subtitle { font-size: .78rem; }
-  .ghost-button { min-height: 44px; padding: 0 18px; font-size: .8rem; }
+  .nav-link, .ghost-button { min-height: 44px; padding: 0 18px; font-size: .8rem; }
   .hero { padding: 56px 0 48px; }
   .booking-card { padding: 30px; border-radius: 32px; margin-top: 18px; }
   .service-grid { grid-template-columns: repeat(3, 1fr); }
