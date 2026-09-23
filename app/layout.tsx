@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import "./calendar.css";
 
 const outfit = Outfit({
   subsets: ["latin"],
