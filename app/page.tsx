@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 const services = [
   {
@@ -30,7 +30,6 @@ const professionals = [
 ];
 
 const timeSlots = ["09:00", "10:30", "12:00", "14:00", "15:30", "17:00"];
-
 const STORAGE_KEY = "paisajismo-booking-draft";
 const APPOINTMENTS_KEY = "paisajismo-demo-appointments";
 
@@ -43,12 +42,24 @@ type Draft = {
 
 type DemoAppointment = {
   id: string;
+  code: string;
   clientName: string;
+  email?: string;
+  phone?: string;
+  note?: string;
   serviceId: string;
   professionalId: string;
   date: string;
   time: string;
-  status: "confirmado" | "pendiente";
+  status: "confirmado" | "pendiente" | "ausente" | "cancelado";
+  createdAt?: string;
+};
+
+type FormData = {
+  name: string;
+  email: string;
+  phone: string;
+  note: string;
 };
 
 function toDateKey(date: Date) {
@@ -80,70 +91,18 @@ function startOfWeek(date: Date) {
 
 function createDemoAppointments(monday: Date): DemoAppointment[] {
   return [
-    {
-      id: "demo-01",
-      clientName: "Camila Paredes",
-      serviceId: "diagnostico",
-      professionalId: "lucia",
-      date: toDateKey(addDays(monday, 2)),
-      time: "10:30",
-      status: "confirmado",
-    },
-    {
-      id: "demo-02",
-      clientName: "Esteban Mejía",
-      serviceId: "botanico",
-      professionalId: "lucia",
-      date: toDateKey(addDays(monday, 3)),
-      time: "14:00",
-      status: "confirmado",
-    },
-    {
-      id: "demo-03",
-      clientName: "Valeria Durón",
-      serviceId: "riego",
-      professionalId: "mateo",
-      date: toDateKey(addDays(monday, 2)),
-      time: "12:00",
-      status: "pendiente",
-    },
-    {
-      id: "demo-04",
-      clientName: "Nicolás Ferrera",
-      serviceId: "diagnostico",
-      professionalId: "mateo",
-      date: toDateKey(addDays(monday, 4)),
-      time: "15:30",
-      status: "confirmado",
-    },
-    {
-      id: "demo-05",
-      clientName: "Mariana Zelaya",
-      serviceId: "riego",
-      professionalId: "ines",
-      date: toDateKey(addDays(monday, 3)),
-      time: "09:00",
-      status: "confirmado",
-    },
-    {
-      id: "demo-06",
-      clientName: "Jorge Lanza",
-      serviceId: "botanico",
-      professionalId: "ines",
-      date: toDateKey(addDays(monday, 4)),
-      time: "10:30",
-      status: "pendiente",
-    },
-    {
-      id: "demo-07",
-      clientName: "Paola Rivera",
-      serviceId: "diagnostico",
-      professionalId: "lucia",
-      date: toDateKey(addDays(monday, 7)),
-      time: "09:00",
-      status: "confirmado",
-    },
+    { id: "demo-01", code: "DEMO01", clientName: "Camila Paredes", serviceId: "diagnostico", professionalId: "lucia", date: toDateKey(addDays(monday, 2)), time: "10:30", status: "confirmado" },
+    { id: "demo-02", code: "DEMO02", clientName: "Esteban Mejía", serviceId: "botanico", professionalId: "lucia", date: toDateKey(addDays(monday, 3)), time: "14:00", status: "confirmado" },
+    { id: "demo-03", code: "DEMO03", clientName: "Valeria Durón", serviceId: "riego", professionalId: "mateo", date: toDateKey(addDays(monday, 2)), time: "12:00", status: "pendiente" },
+    { id: "demo-04", code: "DEMO04", clientName: "Nicolás Ferrera", serviceId: "diagnostico", professionalId: "mateo", date: toDateKey(addDays(monday, 4)), time: "15:30", status: "confirmado" },
+    { id: "demo-05", code: "DEMO05", clientName: "Mariana Zelaya", serviceId: "riego", professionalId: "ines", date: toDateKey(addDays(monday, 3)), time: "09:00", status: "confirmado" },
+    { id: "demo-06", code: "DEMO06", clientName: "Jorge Lanza", serviceId: "botanico", professionalId: "ines", date: toDateKey(addDays(monday, 4)), time: "10:30", status: "pendiente" },
+    { id: "demo-07", code: "DEMO07", clientName: "Paola Rivera", serviceId: "diagnostico", professionalId: "lucia", date: toDateKey(addDays(monday, 7)), time: "09:00", status: "confirmado" },
   ];
+}
+
+function generateCode() {
+  return `PAIS-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 }
 
 export default function HomePage() {
@@ -155,6 +114,9 @@ export default function HomePage() {
   const [todayKey, setTodayKey] = useState("");
   const [baseMondayKey, setBaseMondayKey] = useState("");
   const [appointments, setAppointments] = useState<DemoAppointment[]>([]);
+  const [form, setForm] = useState<FormData>({ name: "", email: "", phone: "", note: "" });
+  const [confirmedAppointment, setConfirmedAppointment] = useState<DemoAppointment | null>(null);
+  const [formError, setFormError] = useState("");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -186,27 +148,16 @@ export default function HomePage() {
     if (saved) {
       try {
         const draft = JSON.parse(saved) as Partial<Draft>;
-        if (draft.serviceId && services.some((item) => item.id === draft.serviceId)) {
-          setServiceId(draft.serviceId);
-        }
-        if (
-          draft.professionalId &&
-          professionals.some((item) => item.id === draft.professionalId)
-        ) {
-          setProfessionalId(draft.professionalId);
-        }
+        if (draft.serviceId && services.some((item) => item.id === draft.serviceId)) setServiceId(draft.serviceId);
+        if (draft.professionalId && professionals.some((item) => item.id === draft.professionalId)) setProfessionalId(draft.professionalId);
         if (draft.date && draft.date >= currentTodayKey) {
           const draftDate = fromDateKey(draft.date);
-          const diffDays = Math.round(
-            (draftDate.getTime() - monday.getTime()) / (1000 * 60 * 60 * 24),
-          );
+          const diffDays = Math.round((draftDate.getTime() - monday.getTime()) / 86400000);
           const draftWeekOffset = Math.max(0, Math.floor(diffDays / 7));
           if (draftWeekOffset <= 4) {
             setWeekOffset(draftWeekOffset);
             setSelectedDate(draft.date);
-            if (draft.time && timeSlots.includes(draft.time)) {
-              setSelectedTime(draft.time);
-            }
+            if (draft.time && timeSlots.includes(draft.time)) setSelectedTime(draft.time);
           }
         }
       } catch {
@@ -214,68 +165,47 @@ export default function HomePage() {
       }
     }
 
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === APPOINTMENTS_KEY && event.newValue) {
+        try {
+          setAppointments(JSON.parse(event.newValue) as DemoAppointment[]);
+        } catch {}
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
     setReady(true);
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
-  const weekStart = useMemo(() => {
-    if (!baseMondayKey) return null;
-    return addDays(fromDateKey(baseMondayKey), weekOffset * 7);
-  }, [baseMondayKey, weekOffset]);
-
-  const weekDays = useMemo(() => {
-    if (!weekStart) return [];
-    return Array.from({ length: 6 }, (_, index) => addDays(weekStart, index));
-  }, [weekStart]);
+  const weekStart = useMemo(() => baseMondayKey ? addDays(fromDateKey(baseMondayKey), weekOffset * 7) : null, [baseMondayKey, weekOffset]);
+  const weekDays = useMemo(() => weekStart ? Array.from({ length: 6 }, (_, index) => addDays(weekStart, index)) : [], [weekStart]);
 
   useEffect(() => {
     if (!ready || !weekStart || selectedDate) return;
-
     const firstAvailableDay = weekDays.find((date) => toDateKey(date) >= todayKey);
-    if (firstAvailableDay) {
-      setSelectedDate(toDateKey(firstAvailableDay));
-      return;
-    }
-
-    const nextWeek = addDays(weekStart, 7);
-    setWeekOffset((current) => current + 1);
-    setSelectedDate(toDateKey(nextWeek));
+    if (firstAvailableDay) setSelectedDate(toDateKey(firstAvailableDay));
   }, [ready, selectedDate, todayKey, weekDays, weekStart]);
 
-  const selectedService = useMemo(
-    () => services.find((item) => item.id === serviceId) ?? services[0],
-    [serviceId],
-  );
-
-  const selectedProfessional = useMemo(
-    () => professionals.find((item) => item.id === professionalId) ?? professionals[0],
-    [professionalId],
-  );
+  const selectedService = useMemo(() => services.find((item) => item.id === serviceId) ?? services[0], [serviceId]);
+  const selectedProfessional = useMemo(() => professionals.find((item) => item.id === professionalId) ?? professionals[0], [professionalId]);
 
   const occupiedTimes = useMemo(() => {
     if (!selectedDate) return new Set<string>();
     return new Set(
       appointments
-        .filter(
-          (appointment) =>
-            appointment.professionalId === professionalId &&
-            appointment.date === selectedDate,
-        )
+        .filter((appointment) => appointment.professionalId === professionalId && appointment.date === selectedDate && appointment.status !== "cancelado")
         .map((appointment) => appointment.time),
     );
   }, [appointments, professionalId, selectedDate]);
 
   useEffect(() => {
-    if (selectedTime && occupiedTimes.has(selectedTime)) {
-      setSelectedTime("");
-    }
+    if (selectedTime && occupiedTimes.has(selectedTime)) setSelectedTime("");
   }, [occupiedTimes, selectedTime]);
 
   useEffect(() => {
     if (!ready) return;
-    window.localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ serviceId, professionalId, date: selectedDate, time: selectedTime } satisfies Draft),
-    );
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ serviceId, professionalId, date: selectedDate, time: selectedTime } satisfies Draft));
   }, [serviceId, professionalId, selectedDate, selectedTime, ready]);
 
   const weekLabel = useMemo(() => {
@@ -286,14 +216,16 @@ export default function HomePage() {
     return `${startLabel} — ${endLabel}`;
   }, [weekStart]);
 
+  const selectedDateLabel = selectedDate
+    ? fromDateKey(selectedDate).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })
+    : "Selecciona un día";
+
   function changeWeek(direction: -1 | 1) {
     const nextOffset = Math.min(4, Math.max(0, weekOffset + direction));
     if (nextOffset === weekOffset || !baseMondayKey) return;
-
     const nextWeekStart = addDays(fromDateKey(baseMondayKey), nextOffset * 7);
     const candidates = Array.from({ length: 6 }, (_, index) => addDays(nextWeekStart, index));
     const firstAvailable = candidates.find((date) => toDateKey(date) >= todayKey) ?? candidates[0];
-
     setWeekOffset(nextOffset);
     setSelectedDate(toDateKey(firstAvailable));
     setSelectedTime("");
@@ -306,13 +238,66 @@ export default function HomePage() {
     setSelectedTime("");
   }
 
-  const selectedDateLabel = selectedDate
-    ? fromDateKey(selectedDate).toLocaleDateString("es-ES", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-      })
-    : "Selecciona un día";
+  function submitBooking(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFormError("");
+
+    if (!selectedDate || !selectedTime) {
+      setFormError("Selecciona primero un día y una hora disponibles.");
+      return;
+    }
+    if (!form.name.trim() || !form.phone.trim() || !form.email.trim()) {
+      setFormError("Completa nombre, teléfono y correo para confirmar la reserva.");
+      return;
+    }
+
+    let latestAppointments = appointments;
+    const stored = window.localStorage.getItem(APPOINTMENTS_KEY);
+    if (stored) {
+      try { latestAppointments = JSON.parse(stored) as DemoAppointment[]; } catch {}
+    }
+
+    const conflict = latestAppointments.some(
+      (appointment) => appointment.professionalId === professionalId && appointment.date === selectedDate && appointment.time === selectedTime && appointment.status !== "cancelado",
+    );
+
+    if (conflict) {
+      setAppointments(latestAppointments);
+      setSelectedTime("");
+      setFormError("Ese horario acaba de ocuparse. Elige otro turno disponible.");
+      return;
+    }
+
+    const appointment: DemoAppointment = {
+      id: `booking-${Date.now()}`,
+      code: generateCode(),
+      clientName: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+      note: form.note.trim(),
+      serviceId,
+      professionalId,
+      date: selectedDate,
+      time: selectedTime,
+      status: "confirmado",
+      createdAt: new Date().toISOString(),
+    };
+
+    const nextAppointments = [...latestAppointments, appointment];
+    window.localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(nextAppointments));
+    window.localStorage.removeItem(STORAGE_KEY);
+    setAppointments(nextAppointments);
+    setConfirmedAppointment(appointment);
+    setFormError("");
+    window.setTimeout(() => document.getElementById("confirmation")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+  }
+
+  function startNewBooking() {
+    setConfirmedAppointment(null);
+    setSelectedTime("");
+    setForm({ name: "", email: "", phone: "", note: "" });
+    window.setTimeout(() => document.getElementById("booking")?.scrollIntoView({ behavior: "smooth" }), 50);
+  }
 
   return (
     <main className="page-shell">
@@ -322,43 +307,28 @@ export default function HomePage() {
           <p className="brand-name">Estudio Paisaje</p>
           <p className="brand-subtitle">Agenda de visitas y consultoría</p>
         </div>
-        <button className="ghost-button" type="button">Gestionar turno</button>
+        <button className="ghost-button" type="button" onClick={() => document.getElementById("booking")?.scrollIntoView({ behavior: "smooth" })}>Reservar</button>
       </header>
 
       <section className="hero">
         <p className="eyebrow">Reserva online</p>
-        <h1>Encuentra un horario para avanzar con tu espacio exterior.</h1>
-        <p className="hero-copy">
-          Elige el tipo de atención, el profesional y un horario disponible. La demo conserva tu selección en este navegador.
-        </p>
+        <h1>Tu paisaje empieza aquí.</h1>
+        <p className="hero-copy">Elige el servicio, encuentra un horario y confirma tu visita en pocos pasos.</p>
       </section>
 
-      <section className="booking-card" aria-labelledby="booking-title">
+      <section className="booking-card" id="booking" aria-labelledby="booking-title">
         <div className="step-heading">
           <span className="step-number">01</span>
-          <div>
-            <p className="overline">Primer paso</p>
-            <h2 id="booking-title">¿Qué necesitas?</h2>
-          </div>
+          <div><p className="overline">Servicio y profesional</p><h2 id="booking-title">¿Qué necesitas?</h2></div>
         </div>
 
         <div className="service-grid">
           {services.map((service) => {
             const active = service.id === serviceId;
             return (
-              <button
-                className={`service-card ${active ? "is-active" : ""}`}
-                key={service.id}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setServiceId(service.id)}
-              >
-                <div className="service-card-topline">
-                  <span>{service.duration}</span>
-                  <span className="selection-dot" aria-hidden="true" />
-                </div>
-                <strong>{service.title}</strong>
-                <span>{service.description}</span>
+              <button className={`service-card ${active ? "is-active" : ""}`} key={service.id} type="button" aria-pressed={active} onClick={() => { setServiceId(service.id); setConfirmedAppointment(null); }}>
+                <div className="service-card-topline"><span>{service.duration}</span><span className="selection-dot" aria-hidden="true" /></div>
+                <strong>{service.title}</strong><span>{service.description}</span>
               </button>
             );
           })}
@@ -366,59 +336,24 @@ export default function HomePage() {
 
         <div className="field-block">
           <label htmlFor="professional">Profesional</label>
-          <select
-            id="professional"
-            value={professionalId}
-            onChange={(event) => {
-              setProfessionalId(event.target.value);
-              setSelectedTime("");
-            }}
-          >
-            {professionals.map((professional) => (
-              <option key={professional.id} value={professional.id}>
-                {professional.name} · {professional.role}
-              </option>
-            ))}
+          <select id="professional" value={professionalId} onChange={(event) => { setProfessionalId(event.target.value); setSelectedTime(""); setConfirmedAppointment(null); }}>
+            {professionals.map((professional) => <option key={professional.id} value={professional.id}>{professional.name} · {professional.role}</option>)}
           </select>
         </div>
       </section>
 
       <section className="booking-card calendar-card" aria-labelledby="calendar-title">
-        <div className="step-heading calendar-heading">
+        <div className="step-heading">
           <span className="step-number">02</span>
-          <div>
-            <p className="overline">Disponibilidad</p>
-            <h2 id="calendar-title">Elige día y hora</h2>
-          </div>
+          <div><p className="overline">Disponibilidad</p><h2 id="calendar-title">Elige día y hora</h2></div>
         </div>
 
-        {!ready || !weekStart ? (
-          <div className="calendar-loading">Preparando disponibilidad de la agenda…</div>
-        ) : (
+        {!ready || !weekStart ? <div className="calendar-loading">Preparando disponibilidad…</div> : (
           <>
             <div className="week-toolbar" aria-label="Navegación semanal">
-              <button
-                type="button"
-                className="week-nav-button"
-                onClick={() => changeWeek(-1)}
-                disabled={weekOffset === 0}
-                aria-label="Semana anterior"
-              >
-                ←
-              </button>
-              <div>
-                <span>Semana</span>
-                <strong>{weekLabel}</strong>
-              </div>
-              <button
-                type="button"
-                className="week-nav-button"
-                onClick={() => changeWeek(1)}
-                disabled={weekOffset === 4}
-                aria-label="Semana siguiente"
-              >
-                →
-              </button>
+              <button type="button" className="week-nav-button" onClick={() => changeWeek(-1)} disabled={weekOffset === 0} aria-label="Semana anterior">←</button>
+              <div><span>Semana</span><strong>{weekLabel}</strong></div>
+              <button type="button" className="week-nav-button" onClick={() => changeWeek(1)} disabled={weekOffset === 4} aria-label="Semana siguiente">→</button>
             </div>
 
             <div className="day-strip" aria-label="Días disponibles">
@@ -427,14 +362,7 @@ export default function HomePage() {
                 const isPast = key < todayKey;
                 const active = key === selectedDate;
                 return (
-                  <button
-                    type="button"
-                    className={`day-button ${active ? "is-active" : ""}`}
-                    key={key}
-                    disabled={isPast}
-                    aria-pressed={active}
-                    onClick={() => selectDay(date)}
-                  >
+                  <button type="button" className={`day-button ${active ? "is-active" : ""}`} key={key} disabled={isPast} aria-pressed={active} onClick={() => selectDay(date)}>
                     <span>{date.toLocaleDateString("es-ES", { weekday: "short" }).replace(".", "")}</span>
                     <strong>{date.getDate()}</strong>
                     <small>{date.toLocaleDateString("es-ES", { month: "short" }).replace(".", "")}</small>
@@ -443,67 +371,61 @@ export default function HomePage() {
               })}
             </div>
 
-            <div className="availability-head">
-              <div>
-                <span className="summary-label dark-label">Horarios de {selectedProfessional.name}</span>
-                <strong>{selectedDateLabel}</strong>
-              </div>
-              <div className="availability-legend" aria-label="Leyenda de disponibilidad">
-                <span><i className="legend-dot available" />Disponible</span>
-                <span><i className="legend-dot occupied" />Ocupado</span>
-              </div>
-            </div>
+            <div className="availability-heading"><div><span>Horarios de {selectedProfessional.name}</span><strong>{selectedDateLabel}</strong></div><span className="availability-note">Los ocupados no se pueden seleccionar</span></div>
 
-            <div className="time-grid" aria-label="Horarios">
+            <div className="slot-grid">
               {timeSlots.map((time) => {
                 const occupied = occupiedTimes.has(time);
                 const active = selectedTime === time;
-                return (
-                  <button
-                    type="button"
-                    className={`time-button ${active ? "is-active" : ""}`}
-                    key={time}
-                    disabled={occupied}
-                    aria-pressed={active}
-                    onClick={() => setSelectedTime(time)}
-                  >
-                    <strong>{time}</strong>
-                    <span>{occupied ? "Ocupado" : active ? "Seleccionado" : "Disponible"}</span>
-                  </button>
-                );
+                return <button key={time} type="button" className={`slot-button ${active ? "is-active" : ""}`} disabled={occupied} aria-pressed={active} onClick={() => { setSelectedTime(time); setConfirmedAppointment(null); }}>{time}<span>{occupied ? "Ocupado" : active ? "Elegido" : "Disponible"}</span></button>;
               })}
-            </div>
-
-            <div className={`selection-summary ${selectedTime ? "is-complete" : ""}`}>
-              <div>
-                <span className="summary-label">Tu selección</span>
-                <strong>{selectedService.title}</strong>
-                <span>{selectedProfessional.name}</span>
-                <span className="summary-date">
-                  {selectedTime ? `${selectedDateLabel} · ${selectedTime}` : "Selecciona un horario disponible"}
-                </span>
-              </div>
-              <span className="selection-status">
-                {selectedTime ? "Horario listo" : "Falta elegir hora"}
-              </span>
             </div>
           </>
         )}
       </section>
 
+      <section className="booking-card details-card" aria-labelledby="details-title">
+        <div className="step-heading">
+          <span className="step-number">03</span>
+          <div><p className="overline">Tus datos</p><h2 id="details-title">Confirma tu visita</h2></div>
+        </div>
+
+        <div className="booking-summary">
+          <div><span>Servicio</span><strong>{selectedService.title}</strong></div>
+          <div><span>Profesional</span><strong>{selectedProfessional.name}</strong></div>
+          <div><span>Fecha</span><strong>{selectedDateLabel}</strong></div>
+          <div><span>Hora</span><strong>{selectedTime || "Por elegir"}</strong></div>
+        </div>
+
+        <form className="booking-form" onSubmit={submitBooking}>
+          <div className="form-grid">
+            <label><span>Nombre y apellidos</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Ej. Andrea Mejía" autoComplete="name" /></label>
+            <label><span>Teléfono</span><input value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} placeholder="Ej. +504 9999 9999" inputMode="tel" autoComplete="tel" /></label>
+            <label><span>Correo electrónico</span><input value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} placeholder="nombre@correo.com" type="email" autoComplete="email" /></label>
+            <label className="form-wide"><span>Nota breve <small>opcional</small></span><textarea value={form.note} onChange={(event) => setForm({ ...form, note: event.target.value })} placeholder="Cuéntanos en una línea qué necesitas revisar." rows={3} /></label>
+          </div>
+          {formError && <p className="form-error" role="alert">{formError}</p>}
+          <button className="primary-button booking-submit" type="submit" disabled={!selectedTime}>Confirmar reserva</button>
+          <p className="demo-hint">Demo: la cita se guarda únicamente en este navegador. No se envía ningún correo ni WhatsApp real.</p>
+        </form>
+      </section>
+
+      {confirmedAppointment && (
+        <section className="confirmation-card" id="confirmation" aria-live="polite">
+          <span className="confirmation-icon">✓</span>
+          <p className="overline">Reserva confirmada</p>
+          <h2>Tu visita ya está en la agenda.</h2>
+          <p>Guarda este código para gestionar la cita cuando incorporemos esa función en la siguiente fase.</p>
+          <div className="reservation-code">{confirmedAppointment.code}</div>
+          <div className="confirmation-details"><span>{selectedService.title}</span><strong>{selectedDateLabel} · {confirmedAppointment.time}</strong><span>{selectedProfessional.name}</span></div>
+          <button type="button" className="secondary-button" onClick={startNewBooking}>Hacer otra reserva</button>
+        </section>
+      )}
+
       <section className="trust-strip" aria-label="Información de la reserva">
-        <div>
-          <strong>Disponibilidad clara</strong>
-          <span>Los horarios ya ocupados aparecen bloqueados en la demo.</span>
-        </div>
-        <div>
-          <strong>Reserva flexible</strong>
-          <span>Más adelante podrás reprogramar o cancelar con tu código de reserva.</span>
-        </div>
-        <div>
-          <strong>Datos de demostración</strong>
-          <span>Servicios, agenda y selección funcionan íntegramente en este navegador.</span>
-        </div>
+        <div><strong>Reserva rápida</strong><span>Servicio, profesional, horario y datos mínimos.</span></div>
+        <div><strong>Disponibilidad clara</strong><span>Los turnos ocupados quedan bloqueados automáticamente.</span></div>
+        <div><strong>Demo persistente</strong><span>Las citas creadas permanecen tras recargar el navegador.</span></div>
       </section>
     </main>
   );
