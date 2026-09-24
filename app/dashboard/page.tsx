@@ -29,11 +29,22 @@ const professionals = [
 type ProfessionalId = "lucia" | "mateo" | "ines";
 type Status = "confirmado" | "pendiente" | "ausente" | "cancelado";
 type DemoAppointment = {
-  id: string; code: string; clientName: string; email?: string; phone?: string; note?: string; projectType?: string; location?: string;
-  serviceId: keyof typeof services; professionalId: ProfessionalId; date: string; time: string; status: Status; createdAt?: string;
+  id: string;
+  code: string;
+  clientName: string;
+  email?: string;
+  phone?: string;
+  note?: string;
+  projectType?: string;
+  location?: string;
+  serviceId: keyof typeof services;
+  professionalId: ProfessionalId;
+  date: string;
+  time: string;
+  status: Status;
+  createdAt?: string;
 };
 type AvailabilityBlock = { id: string; professionalId: ProfessionalId; date: string; time: string; reason: string; createdAt?: string };
-
 type BlockForm = { professionalId: ProfessionalId; date: string; time: string; reason: string };
 
 function toDateKey(date: Date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; }
@@ -66,15 +77,24 @@ export default function DashboardPage() {
   const [blockForm, setBlockForm] = useState<BlockForm>({ professionalId: "lucia", date: "", time: "09:00", reason: "" });
   const [blockMessage, setBlockMessage] = useState("");
   const [blockError, setBlockError] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
 
   useEffect(() => {
-    const today = new Date(); today.setHours(0, 0, 0, 0); const monday = startOfWeek(today); const seed = createRichSeed(monday);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const monday = startOfWeek(today);
+    const seed = createRichSeed(monday);
     let existing: DemoAppointment[] = [];
     try { existing = JSON.parse(window.localStorage.getItem(APPOINTMENTS_KEY) || "[]") as DemoAppointment[]; } catch {}
     const seedById = new Map(seed.map((item) => [item.id, item]));
-    const merged = existing.length ? existing.map((item) => { const richer = seedById.get(item.id); return richer ? { ...richer, ...item, note: item.note || richer.note, email: item.email || richer.email, phone: item.phone || richer.phone, projectType: item.projectType || richer.projectType, location: item.location || richer.location } : item; }) : seed;
-    const ids = new Set(merged.map((item) => item.id)); seed.forEach((item) => { if (!ids.has(item.id)) merged.push(item); });
-    window.localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(merged)); setAppointments(merged);
+    const merged = existing.length ? existing.map((item) => {
+      const richer = seedById.get(item.id);
+      return richer ? { ...richer, ...item, note: item.note || richer.note, email: item.email || richer.email, phone: item.phone || richer.phone, projectType: item.projectType || richer.projectType, location: item.location || richer.location } : item;
+    }) : seed;
+    const ids = new Set(merged.map((item) => item.id));
+    seed.forEach((item) => { if (!ids.has(item.id)) merged.push(item); });
+    window.localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(merged));
+    setAppointments(merged);
 
     let currentBlocks: AvailabilityBlock[] = [];
     try { currentBlocks = JSON.parse(window.localStorage.getItem(BLOCKS_KEY) || "[]") as AvailabilityBlock[]; } catch {}
@@ -83,28 +103,67 @@ export default function DashboardPage() {
       window.localStorage.setItem(BLOCKS_KEY, JSON.stringify(currentBlocks));
     }
     setBlocks(currentBlocks);
-    const todayDateKey = toDateKey(today); setTodayKey(todayDateKey); setWeekStartKey(toDateKey(monday));
-    setBlockForm((current) => ({ ...current, date: todayDateKey })); setReady(true);
+    const todayDateKey = toDateKey(today);
+    setTodayKey(todayDateKey);
+    setWeekStartKey(toDateKey(monday));
+    setBlockForm((current) => ({ ...current, date: todayDateKey }));
+    setReady(true);
   }, []);
 
   const weekEndKey = useMemo(() => weekStartKey ? toDateKey(addDays(fromDateKey(weekStartKey), 6)) : "", [weekStartKey]);
   const summary = useMemo(() => {
+    if (!weekStartKey || !weekEndKey) return { today: 0, week: 0, pending: 0, absent: 0, noShowRate: 0 };
     const inWeek = appointments.filter((item) => item.date >= weekStartKey && item.date <= weekEndKey);
-    return { today: inWeek.filter((item) => item.date === todayKey && item.status !== "cancelado").length, week: inWeek.filter((item) => item.status !== "cancelado").length, pending: inWeek.filter((item) => item.status === "pendiente").length, absent: inWeek.filter((item) => item.status === "ausente").length };
+    const active = inWeek.filter((item) => item.status !== "cancelado");
+    const absent = active.filter((item) => item.status === "ausente").length;
+    return {
+      today: active.filter((item) => item.date === todayKey).length,
+      week: active.length,
+      pending: active.filter((item) => item.status === "pendiente").length,
+      absent,
+      noShowRate: active.length ? Math.round((absent / active.length) * 100) : 0,
+    };
   }, [appointments, todayKey, weekEndKey, weekStartKey]);
 
   const visibleAppointments = useMemo(() => {
     if (!weekStartKey) return [];
     const maxDate = toDateKey(addDays(fromDateKey(weekStartKey), 13));
-    return appointments.filter((item) => item.date >= weekStartKey && item.date <= maxDate && (professionalFilter === "todos" || item.professionalId === professionalFilter)).sort((a, b) => `${a.date}-${a.time}`.localeCompare(`${b.date}-${b.time}`));
+    return appointments
+      .filter((item) => item.date >= weekStartKey && item.date <= maxDate && (professionalFilter === "todos" || item.professionalId === professionalFilter))
+      .sort((a, b) => `${a.date}-${a.time}`.localeCompare(`${b.date}-${b.time}`));
   }, [appointments, professionalFilter, weekStartKey]);
 
   const visibleBlocks = useMemo(() => blocks.filter((block) => block.date >= todayKey).sort((a, b) => `${a.date}-${a.time}`.localeCompare(`${b.date}-${b.time}`)), [blocks, todayKey]);
   const weekLabel = weekStartKey ? `${formatDate(weekStartKey)} — ${formatDate(weekEndKey)}` : "";
 
+  function saveAppointments(next: DemoAppointment[]) {
+    window.localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(next));
+    setAppointments(next);
+  }
+
+  function updateStatus(id: string, status: Status) {
+    const current = appointments.find((appointment) => appointment.id === id);
+    if (!current || current.status === status) return;
+
+    if (status !== "cancelado") {
+      const appointmentConflict = appointments.some((appointment) => appointment.id !== id && appointment.professionalId === current.professionalId && appointment.date === current.date && appointment.time === current.time && appointment.status !== "cancelado");
+      const blockConflict = blocks.some((block) => block.professionalId === current.professionalId && block.date === current.date && block.time === current.time);
+      if (appointmentConflict || blockConflict) {
+        setStatusMessage("No se puede reactivar esa cita porque el horario ya está ocupado o bloqueado.");
+        return;
+      }
+    }
+
+    const next = appointments.map((appointment) => appointment.id === id ? { ...appointment, status } : appointment);
+    saveAppointments(next);
+    setStatusMessage(status === "ausente" ? "Cita marcada como ausente. La estadística de no-show se ha recalculado automáticamente." : `Estado actualizado a ${status}.`);
+  }
+
   function saveBlocks(next: AvailabilityBlock[]) { window.localStorage.setItem(BLOCKS_KEY, JSON.stringify(next)); setBlocks(next); }
   function createBlock(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setBlockError(""); setBlockMessage("");
+    event.preventDefault();
+    setBlockError("");
+    setBlockMessage("");
     if (!blockForm.date || !blockForm.time || !blockForm.reason.trim()) return setBlockError("Completa profesional, fecha, hora y motivo del bloqueo.");
     if (blockForm.date < todayKey) return setBlockError("No puedes crear un bloqueo en una fecha pasada.");
     const appointmentConflict = appointments.some((a) => a.professionalId === blockForm.professionalId && a.date === blockForm.date && a.time === blockForm.time && a.status !== "cancelado");
@@ -112,16 +171,34 @@ export default function DashboardPage() {
     if (appointmentConflict) return setBlockError("Ese horario ya contiene una cita activa. Elige otro hueco.");
     if (duplicate) return setBlockError("Ese horario ya está bloqueado para este profesional.");
     const next = [...blocks, { id: `block-${Date.now()}`, professionalId: blockForm.professionalId, date: blockForm.date, time: blockForm.time, reason: blockForm.reason.trim(), createdAt: new Date().toISOString() }];
-    saveBlocks(next); setBlockMessage("Bloqueo creado. El turno deja de estar disponible para reserva y reprogramación."); setBlockForm((current) => ({ ...current, reason: "" }));
+    saveBlocks(next);
+    setBlockMessage("Bloqueo creado. El turno deja de estar disponible para reserva y reprogramación.");
+    setBlockForm((current) => ({ ...current, reason: "" }));
   }
-  function removeBlock(id: string) { saveBlocks(blocks.filter((block) => block.id !== id)); setBlockMessage("Bloqueo eliminado. El horario vuelve a quedar disponible si no existe una cita."); setBlockError(""); }
+  function removeBlock(id: string) {
+    saveBlocks(blocks.filter((block) => block.id !== id));
+    setBlockMessage("Bloqueo eliminado. El horario vuelve a quedar disponible si no existe una cita.");
+    setBlockError("");
+  }
 
   return (
     <main className={styles.shell}>
-      <header className={styles.header}><a className={styles.brand} href="/"><span className={styles.mark}>P</span><span><strong>Estudio Paisaje</strong><span>Panel interno · demo</span></span></a><nav className={styles.headerActions}><a href="/">Reserva pública</a><a href="/gestionar">Gestionar turno</a></nav></header>
+      <header className={styles.header}>
+        <a className={styles.brand} href="/"><span className={styles.mark}>P</span><span><strong>Estudio Paisaje</strong><span>Panel interno · demo</span></span></a>
+        <nav className={styles.headerActions}><a href="/">Reserva pública</a><a href="/gestionar">Gestionar turno</a></nav>
+      </header>
 
-      <section className={styles.hero}><div><p className={styles.kicker}>Resumen del estudio</p><h1>La agenda, de un vistazo.</h1><p>Una vista interna para ordenar visitas, profesionales y disponibilidad operativa del estudio.</p></div><div className={styles.weekBadge}><span>Semana visible</span><strong>{weekLabel}</strong></div></section>
-      <section className={styles.summaryGrid}><article className={styles.metric}><span>Citas hoy</span><strong>{ready ? summary.today : "—"}</strong><small>Visitas activas</small></article><article className={styles.metric}><span>Semana activa</span><strong>{ready ? summary.week : "—"}</strong><small>Sin cancelaciones</small></article><article className={styles.metric}><span>Pendientes</span><strong>{ready ? summary.pending : "—"}</strong><small>Por confirmar</small></article><article className={styles.metric}><span>Ausencias</span><strong>{ready ? summary.absent : "—"}</strong><small>Inasistencias registradas</small></article></section>
+      <section className={styles.hero}>
+        <div><p className={styles.kicker}>Resumen del estudio</p><h1>La agenda, de un vistazo.</h1><p>Una vista interna para ordenar visitas, profesionales y disponibilidad operativa del estudio.</p></div>
+        <div className={styles.weekBadge}><span>Semana visible</span><strong>{weekLabel}</strong></div>
+      </section>
+
+      <section className={styles.summaryGrid} aria-label="Resumen operativo semanal">
+        <article className={styles.metric}><span>Citas hoy</span><strong>{ready ? summary.today : "—"}</strong><small>Visitas activas</small></article>
+        <article className={styles.metric}><span>Semana activa</span><strong>{ready ? summary.week : "—"}</strong><small>Sin cancelaciones</small></article>
+        <article className={styles.metric}><span>Pendientes</span><strong>{ready ? summary.pending : "—"}</strong><small>Por confirmar</small></article>
+        <article className={styles.metric}><span>No-show</span><strong>{ready ? `${summary.noShowRate}%` : "—"}</strong><small>{ready ? `${summary.absent} ausencia${summary.absent === 1 ? "" : "s"} registrada${summary.absent === 1 ? "" : "s"}` : "Inasistencias"}</small></article>
+      </section>
 
       <section className={blockStyles.blockSection} aria-labelledby="blocks-title">
         <div className={blockStyles.heading}><span>Disponibilidad operativa</span><h2 id="blocks-title">Bloqueos de agenda</h2><p>Reserva tiempo no disponible para visitas: reuniones, desplazamientos, trabajo de campo u otras tareas internas. El bloqueo se aplica también a la reserva pública y a la reprogramación.</p></div>
@@ -141,9 +218,21 @@ export default function DashboardPage() {
 
       <section className={styles.section}><div className={styles.sectionHeading}><div><p className={styles.kicker}>Equipo</p><h2>Profesionales del estudio</h2></div><p>Perfiles ficticios con fotografías de stock para esta demostración.</p></div><div className={styles.professionalGrid}>{professionals.map((professional) => { const activeCount = appointments.filter((item) => item.professionalId === professional.id && item.status !== "cancelado").length; return <article className={styles.professionalCard} key={professional.id}><img src={professional.photo} alt={`Fotografía de stock asociada al perfil ficticio de ${professional.name}`} loading="lazy" /><div className={styles.professionalBody}><div className={styles.professionalTop}><div><h3>{professional.name}</h3><span>{professional.role}</span></div><strong>{activeCount}</strong></div><p className={styles.professionalBio}>{professional.bio}</p><p>{professional.specialty}</p><div className={styles.focusTag}>{professional.focus}</div><small>Fotografía demo: {professional.credit}</small></div></article>; })}</div></section>
 
-      <section className={styles.section}><div className={styles.sectionHeading}><div><p className={styles.kicker}>Agenda precargada</p><h2>Próximas citas y estados</h2></div><p>La agenda comparte el mismo localStorage con la reserva pública y la gestión por código.</p></div><div className={styles.filters}><button className={professionalFilter === "todos" ? styles.filterActive : ""} onClick={() => setProfessionalFilter("todos")} type="button">Todos</button>{professionals.map((p) => <button key={p.id} className={professionalFilter === p.id ? styles.filterActive : ""} onClick={() => setProfessionalFilter(p.id)} type="button">{p.name.split(" ")[0]}</button>)}</div><div className={styles.agendaList}>{visibleAppointments.map((appointment) => { const professional = professionals.find((item) => item.id === appointment.professionalId); return <article className={styles.agendaItem} key={appointment.id}><div className={styles.agendaWhen}><strong>{appointment.time}</strong><span>{formatDate(appointment.date)}</span></div><div className={styles.agendaMain}><div className={styles.agendaTitleRow}><h3>{appointment.clientName}</h3><span className={`${styles.status} ${styles[`status_${appointment.status}`]}`}>{appointment.status}</span></div><strong>{services[appointment.serviceId]}</strong><div className={styles.projectMeta}>{appointment.projectType && <span>{appointment.projectType}</span>}{appointment.location && <span>{appointment.location}</span>}</div><p>{appointment.note || "Consulta paisajística registrada en la agenda de demostración."}</p></div><div className={styles.agendaProfessional}><span>Profesional</span><strong>{professional?.name}</strong><small>{appointment.code}</small></div></article>; })}</div></section>
+      <section className={styles.section} aria-labelledby="agenda-title">
+        <div className={styles.sectionHeading}><div><p className={styles.kicker}>Agenda operativa</p><h2 id="agenda-title">Citas y estados</h2></div><p>Cambia el estado de una cita y el indicador de no-show se actualiza automáticamente.</p></div>
+        {statusMessage && <p className={styles.statusFeedback} role="status">{statusMessage}</p>}
+        <div className={styles.filters}><button className={professionalFilter === "todos" ? styles.filterActive : ""} onClick={() => setProfessionalFilter("todos")} type="button">Todos</button>{professionals.map((p) => <button key={p.id} className={professionalFilter === p.id ? styles.filterActive : ""} onClick={() => setProfessionalFilter(p.id)} type="button">{p.name.split(" ")[0]}</button>)}</div>
+        <div className={styles.agendaList}>{visibleAppointments.map((appointment) => {
+          const professional = professionals.find((item) => item.id === appointment.professionalId);
+          return <article className={styles.agendaItem} key={appointment.id}>
+            <div className={styles.agendaWhen}><strong>{appointment.time}</strong><span>{formatDate(appointment.date)}</span></div>
+            <div className={styles.agendaMain}><div className={styles.agendaTitleRow}><h3>{appointment.clientName}</h3><span className={`${styles.status} ${styles[`status_${appointment.status}`]}`}>{appointment.status}</span></div><strong>{services[appointment.serviceId]}</strong><div className={styles.projectMeta}>{appointment.projectType && <span>{appointment.projectType}</span>}{appointment.location && <span>{appointment.location}</span>}</div><p>{appointment.note || "Consulta paisajística registrada en la agenda de demostración."}</p></div>
+            <div className={styles.agendaProfessional}><span>Profesional</span><strong>{professional?.name}</strong><small>{appointment.code}</small><label className={styles.statusEditor}><span>Estado</span><select value={appointment.status} onChange={(event) => updateStatus(appointment.id, event.target.value as Status)}><option value="confirmado">Confirmado</option><option value="pendiente">Pendiente</option><option value="ausente">Ausente</option><option value="cancelado">Cancelado</option></select></label></div>
+          </article>;
+        })}</div>
+      </section>
 
-      <section className={styles.demoNote}><strong>Fase 6 · bloqueos operativos</strong><p>Esta fase valida que la disponibilidad del cliente responda a la agenda real del estudio. La edición de estados, estadísticas avanzadas y recordatorios simulados quedan para fases posteriores.</p></section>
+      <section className={styles.demoNote}><strong>Fase 7 · estados y no-show</strong><p>Esta fase valida que el equipo pueda actualizar el estado de cada cita y que las estadísticas de ausencia se recalculen en tiempo real y persistan en localStorage.</p></section>
     </main>
   );
 }
