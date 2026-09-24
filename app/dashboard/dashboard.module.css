@@ -84,7 +84,8 @@
 .hero h1,
 .sectionHeading h2,
 .professionalBody h3,
-.agendaMain h3 {
+.agendaMain h3,
+.serviceVisualBody h3 {
   font-family: var(--font-outfit), sans-serif;
   color: var(--foliage);
 }
@@ -204,6 +205,61 @@
   font-size: .72rem;
 }
 
+.serviceVisualGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.serviceVisualCard {
+  overflow: hidden;
+  border: 1px solid rgba(30, 58, 47, .1);
+  border-radius: 25px;
+  background: var(--surface);
+  box-shadow: 0 16px 38px rgba(35, 39, 42, .06);
+}
+
+.serviceVisualCard img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  background: rgba(125, 157, 133, .12);
+}
+
+.serviceVisualBody {
+  padding: 18px;
+}
+
+.serviceVisualBody > span {
+  color: var(--terracotta);
+  font-size: .64rem;
+  font-weight: 900;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+
+.serviceVisualBody h3 {
+  margin: 7px 0 0;
+  font-size: 1.15rem;
+  letter-spacing: -.015em;
+}
+
+.serviceVisualBody p {
+  margin: 10px 0 12px;
+  color: var(--muted);
+  font-size: .78rem;
+  line-height: 1.6;
+}
+
+.serviceVisualBody small {
+  display: block;
+  padding-top: 11px;
+  border-top: 1px solid var(--line);
+  color: #7f8883;
+  font-size: .67rem;
+  line-height: 1.5;
+}
+
 .professionalGrid {
   display: grid;
   gap: 12px;
@@ -262,10 +318,26 @@
 }
 
 .professionalBody p {
-  margin: 13px 0 12px;
+  margin: 13px 0 10px;
   color: var(--muted);
   font-size: .78rem;
   line-height: 1.6;
+}
+
+.professionalBody p.professionalBio {
+  margin-top: 0;
+  color: var(--charcoal);
+}
+
+.focusTag {
+  margin: 12px 0;
+  padding: 9px 11px;
+  border-radius: 12px;
+  background: rgba(125, 157, 133, .12);
+  color: var(--foliage);
+  font-size: .66rem;
+  font-weight: 800;
+  line-height: 1.45;
 }
 
 .professionalBody small {
@@ -357,6 +429,22 @@
   font-size: .74rem;
 }
 
+.projectMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.projectMeta span {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(125, 157, 133, .11);
+  color: var(--foliage);
+  font-size: .62rem;
+  font-weight: 750;
+}
+
 .agendaMain p {
   margin: 8px 0 0;
   color: var(--muted);
@@ -443,6 +531,8 @@
   .section { margin-top: 42px; }
   .sectionHeading { grid-template-columns: 1fr auto; align-items: end; }
   .sectionHeading > p { text-align: right; }
+  .serviceVisualGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .serviceVisualCard img { aspect-ratio: 4 / 3.1; }
   .professionalGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .professionalCard img { aspect-ratio: 4 / 3.2; }
   .agendaItem { grid-template-columns: 110px minmax(0, 1fr) 160px; align-items: center; gap: 18px; padding: 17px 19px; }
@@ -451,6 +541,7 @@
 }
 
 @media (min-width: 1020px) {
+  .serviceVisualCard img { aspect-ratio: 4 / 2.8; }
   .professionalCard img { aspect-ratio: 4 / 3; }
   .agendaItem { grid-template-columns: 125px minmax(0, 1fr) 190px; }
 }
