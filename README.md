@@ -34,14 +34,15 @@ Para una prueba rápida puedes utilizar `DEMO01`.
 
 Pulsa **“Panel interno”** desde la reserva pública.
 
-El dashboard muestra:
+El dashboard permite:
 
-- resumen visual de agenda;
-- perfiles profesionales ficticios con fotografías de stock;
-- agenda precargada con contenido específico de paisajismo;
-- estados `confirmado`, `pendiente`, `ausente` y `cancelado`;
-- filtro por profesional;
-- **gestor de bloqueos de disponibilidad**.
+- consultar el resumen operativo semanal;
+- ver perfiles profesionales ficticios con fotografías de stock;
+- revisar la agenda precargada con contenido específico de paisajismo;
+- filtrar citas por profesional;
+- crear y eliminar bloqueos de disponibilidad;
+- editar el estado de cada cita;
+- recalcular automáticamente la estadística de **no-show**.
 
 Para comprobar los bloqueos:
 
@@ -49,10 +50,22 @@ Para comprobar los bloqueos:
 2. Añade un motivo, por ejemplo `Visita técnica externa`.
 3. Pulsa **“Bloquear horario”**.
 4. Vuelve a **Reserva pública**, selecciona ese profesional y fecha: el turno aparecerá como **Bloqueado** y no se podrá reservar.
-5. La pantalla **Gestionar turno** tampoco permitirá reprogramar una cita a ese horario.
+5. **Gestionar turno** tampoco permitirá reprogramar una cita a ese horario.
 6. Elimina el bloqueo desde el panel y el turno volverá a quedar disponible siempre que no exista una cita activa.
 
 Los bloqueos se guardan en `localStorage` con la clave `paisajismo-demo-blocks`.
+
+### Cambiar estados y comprobar el no-show
+
+En **Panel interno → Agenda operativa**:
+
+1. Localiza una cita.
+2. Cambia su estado desde el selector a **Ausente**.
+3. La tarjeta superior **No-show** actualiza inmediatamente el porcentaje semanal y el número de ausencias.
+4. Cambia de nuevo el estado a `confirmado`, `pendiente` o `cancelado` y comprueba que la estadística vuelve a recalcularse.
+5. Recarga la página: el estado permanece porque se guarda en `localStorage`.
+
+El porcentaje de no-show se calcula sobre las citas activas de la semana, excluyendo las canceladas.
 
 ## Servicios incluidos
 
@@ -82,8 +95,10 @@ Son perfiles ficticios para la demostración. Las fotografías se presentan expr
 - Prevención de doble reserva dentro del mismo almacenamiento local.
 - Bloqueos de agenda creados desde el panel interno.
 - Los bloqueos impiden reservar y reprogramar ese horario.
-- Dashboard interno de consulta.
+- Dashboard interno de consulta y gestión.
 - Agenda precargada con citas en distintos estados.
+- Edición interna de estados `confirmado`, `pendiente`, `ausente` y `cancelado`.
+- Estadística automática de no-show al cambiar estados.
 - Filtro por profesional.
 - Persistencia mediante `localStorage`.
 - Diseño responsive con prioridad móvil.
@@ -114,8 +129,6 @@ Al cargar sin datos guardados se restauran los datos iniciales de demostración.
 
 Todavía no se incluyen:
 
-- edición interna de estados desde el dashboard;
-- recálculo automático de estadísticas de ausencias tras cambiar el estado a `ausente`;
 - búsqueda interna avanzada de citas;
 - exportación;
 - simulación visual de recordatorios a 48 h y 3 h;
@@ -157,6 +170,6 @@ http://localhost:3000
 
 ## Estado del proyecto
 
-**Fase 6 — Bloqueos operativos de agenda conectados con reserva pública y reprogramación.**
+**Fase 7 — Edición de estados y recálculo automático de no-show.**
 
 El proyecto se desarrolla por fases. Cada fase se revisa antes de continuar para comprobar funcionalidad, responsive mobile-first, identidad visual y cumplimiento de los criterios de aceptación.
