@@ -1,49 +1,58 @@
 # Turnos online — Estudio de paisajismo
 
-Demo frontend de un sistema de reserva y gestión de turnos para un estudio de paisajismo, diseñada con enfoque **mobile-first**.
+Demo frontend de un sistema de reserva, reprogramación y gestión operativa de turnos para un estudio de paisajismo, desarrollada con enfoque **mobile-first**.
+
+## Objetivo de la aplicación
+
+Digitalizar la reserva y reprogramación de turnos de clientes y ordenar la agenda operativa de los profesionales del estudio en un panel ágil.
 
 ## Cómo probar la demo
 
 ### Reservar una cita
 
 1. Abre la URL de previsualización del proyecto.
-2. Selecciona un servicio.
-3. Elige un profesional.
-4. Selecciona fecha y horario disponible.
-5. Completa nombre, teléfono y correo electrónico.
-6. Confirma la reserva.
-7. Guarda el código generado, por ejemplo `PAIS-ABC123`.
+2. Selecciona servicio y profesional.
+3. Selecciona fecha y horario disponible.
+4. Completa nombre, teléfono y correo electrónico.
+5. Confirma la reserva.
+6. Guarda el código generado, por ejemplo `PAIS-ABC123`.
 
-La cita queda guardada en `localStorage` y el horario seleccionado pasa a mostrarse como ocupado.
+La cita queda guardada en `localStorage` y el horario pasa a mostrarse como ocupado.
 
 ### Gestionar una cita
 
-Pulsa **“Gestionar turno”** en la aplicación.
+Pulsa **“Gestionar turno”**.
 
 1. Introduce el código de reserva.
 2. Consulta servicio, profesional, fecha, hora y estado.
-3. Puedes **reprogramar** la cita seleccionando un nuevo día y horario disponible.
-4. También puedes **cancelar** la cita.
-5. Al cancelar o reprogramar, el hueco horario anterior queda disponible inmediatamente en la demo.
+3. Reprograma a otro hueco disponible o cancela la cita.
+4. Al cancelar o reprogramar, el hueco anterior queda disponible inmediatamente.
 
-Para probar esta pantalla sin crear una cita nueva puedes utilizar el código `DEMO01`.
+Para una prueba rápida puedes utilizar `DEMO01`.
 
-### Ver el panel interno
+### Panel interno y bloqueos de agenda
 
-Pulsa **“Panel interno”** desde la parte superior de la reserva pública.
+Pulsa **“Panel interno”** desde la reserva pública.
 
-El dashboard de esta fase permite consultar:
+El dashboard muestra:
 
-- resumen visual de la semana;
-- citas previstas para el día;
-- citas pendientes;
-- ausencias registradas en los datos demo;
-- tres perfiles profesionales ficticios con fotografía de stock;
-- agenda precargada con contenido específico del sector paisajístico;
+- resumen visual de agenda;
+- perfiles profesionales ficticios con fotografías de stock;
+- agenda precargada con contenido específico de paisajismo;
 - estados `confirmado`, `pendiente`, `ausente` y `cancelado`;
-- filtro de agenda por profesional.
+- filtro por profesional;
+- **gestor de bloqueos de disponibilidad**.
 
-El dashboard utiliza el mismo `localStorage` que la reserva pública. Las citas creadas, canceladas o reprogramadas forman parte del mismo conjunto de datos.
+Para comprobar los bloqueos:
+
+1. En **Bloqueos de agenda**, elige profesional, fecha y hora.
+2. Añade un motivo, por ejemplo `Visita técnica externa`.
+3. Pulsa **“Bloquear horario”**.
+4. Vuelve a **Reserva pública**, selecciona ese profesional y fecha: el turno aparecerá como **Bloqueado** y no se podrá reservar.
+5. La pantalla **Gestionar turno** tampoco permitirá reprogramar una cita a ese horario.
+6. Elimina el bloqueo desde el panel y el turno volverá a quedar disponible siempre que no exista una cita activa.
+
+Los bloqueos se guardan en `localStorage` con la clave `paisajismo-demo-blocks`.
 
 ## Servicios incluidos
 
@@ -51,7 +60,7 @@ El dashboard utiliza el mismo `localStorage` que la reserva pública. Las citas 
 - **Consultoría de diseño botánico** — 75 min.
 - **Supervisión de riego y siembra** — 45 min.
 
-Los textos de la agenda son específicos del sector: análisis de asoleamiento y drenaje, selección de especies, diseño botánico, revisión de riego, siembra, taludes y puesta en marcha de jardines. No se utiliza texto de relleno.
+Los textos son específicos del sector: asoleamiento, drenaje, selección de especies, diseño botánico, riego, siembra, taludes y puesta en marcha de jardines. No se utiliza texto de relleno.
 
 ## Profesionales demo
 
@@ -59,28 +68,25 @@ Los textos de la agenda son específicos del sector: análisis de asoleamiento y
 - **Mateo Rivas** — Especialista en diseño botánico.
 - **Inés Valverde** — Coordinadora de obra verde.
 
-Son perfiles ficticios creados únicamente para la demostración. Las fotografías utilizadas son imágenes de stock de Unsplash identificadas como libres de uso bajo su licencia y se muestran con crédito dentro del propio panel.
+Son perfiles ficticios para la demostración. Las fotografías se presentan expresamente como fotografías de stock.
 
 ## Funcionalidades disponibles actualmente
 
+- Reserva pública de cita.
 - Selección de servicio y profesional.
 - Calendario semanal navegable.
-- Horarios disponibles y ocupados.
-- Creación de citas demo.
+- Horarios disponibles, ocupados y bloqueados.
 - Código único de reserva.
-- Persistencia mediante `localStorage`.
-- Consulta de reserva mediante código.
-- Cancelación de citas.
-- Reprogramación de citas.
+- Consulta, cancelación y reprogramación mediante código.
 - Liberación inmediata del hueco anterior al cancelar o reprogramar.
 - Prevención de doble reserva dentro del mismo almacenamiento local.
+- Bloqueos de agenda creados desde el panel interno.
+- Los bloqueos impiden reservar y reprogramar ese horario.
 - Dashboard interno de consulta.
-- Resumen visual de agenda.
-- Profesionales con perfiles y fotografías demo.
 - Agenda precargada con citas en distintos estados.
-- Filtro de agenda por profesional.
+- Filtro por profesional.
+- Persistencia mediante `localStorage`.
 - Diseño responsive con prioridad móvil.
-- Identidad visual basada en el briefing del cliente.
 
 ## Restablecer la demo y recuperar los datos de ejemplo
 
@@ -89,10 +95,10 @@ Las pruebas quedan guardadas en el navegador mediante `localStorage`.
 Para volver al estado inicial:
 
 1. Abre la aplicación.
-2. Borra los datos del sitio o el almacenamiento local correspondiente a la URL de la demo desde la configuración del navegador.
+2. Borra los datos del sitio o el almacenamiento local de la URL de la demo desde la configuración del navegador.
 3. Recarga la página.
 
-Al volver a cargar sin datos guardados, se restauran los datos de ejemplo incluidos en la aplicación.
+Al cargar sin datos guardados se restauran los datos iniciales de demostración. En una fase posterior se incorporará un botón interno **“Restablecer demo”**.
 
 ## Identidad visual aplicada
 
@@ -102,16 +108,15 @@ Al volver a cargar sin datos guardados, se restauran los datos de ejemplo inclui
 - Verde Salvia: `#7D9D85`
 - Gris Carbón: `#23272A`
 - Titulares, números y destacados: **Outfit**
-- Textos, formularios y controles: **Plus Jakarta Sans**
+- Lectura, formularios, controles y tablas: **Plus Jakarta Sans**
 
 ## Funcionalidades previstas en siguientes fases
 
 Todavía no se incluyen:
 
 - edición interna de estados desde el dashboard;
-- bloqueos de disponibilidad desde el panel;
-- listado y búsqueda interna avanzada de citas;
-- estadística automática de ausencias tras editar estados;
+- recálculo automático de estadísticas de ausencias tras cambiar el estado a `ausente`;
+- búsqueda interna avanzada de citas;
 - exportación;
 - simulación visual de recordatorios a 48 h y 3 h;
 - simulación de estados de correo y WhatsApp;
@@ -120,11 +125,13 @@ Todavía no se incluyen:
 
 ## Persistencia y alcance técnico
 
-La demo **no utiliza backend ni base de datos externa**. Los datos se guardan en `localStorage`, dentro del navegador y dispositivo desde el que se utiliza la aplicación.
+La demo **no utiliza backend ni base de datos externa**. Los datos se guardan en `localStorage` en el navegador y dispositivo utilizados.
 
-Los datos de distintos dispositivos no se sincronizan entre sí. En esta demo no se conectan servicios reales de correo, WhatsApp ni pagos. Las futuras interacciones dependientes de servicios externos se representarán mediante estados y acciones simuladas, dejando la estructura preparada para su integración posterior.
+Esto permite demostrar el flujo sin configurar servicios externos. No existe sincronización real entre dispositivos y la prevención de concurrencia entre usuarios distintos requerirá una base de datos centralizada en la implementación posterior.
 
-El encargo actual no contempla pago en línea, por lo que la demo no incorpora un flujo de pago real.
+No se conectan servicios reales de correo, WhatsApp ni pagos. Las futuras interacciones dependientes de esos servicios se representarán mediante estados y acciones simuladas.
+
+El encargo actual no contempla pago en línea, por lo que no existe flujo de pago real.
 
 ## Tecnología
 
@@ -136,8 +143,6 @@ El encargo actual no contempla pago en línea, por lo que la demo no incorpora u
 - Vercel
 
 ## Ejecutar el proyecto en local
-
-Requisitos: Node.js y npm instalados.
 
 ```bash
 npm install
@@ -152,6 +157,6 @@ http://localhost:3000
 
 ## Estado del proyecto
 
-**Fase 5 — Resumen visual, profesionales con fotografía y agenda precargada con estados.**
+**Fase 6 — Bloqueos operativos de agenda conectados con reserva pública y reprogramación.**
 
-El proyecto se desarrolla por fases. Antes de avanzar se revisan funcionalidad, responsive mobile-first, identidad visual y cumplimiento del briefing del cliente.
+El proyecto se desarrolla por fases. Cada fase se revisa antes de continuar para comprobar funcionalidad, responsive mobile-first, identidad visual y cumplimiento de los criterios de aceptación.
