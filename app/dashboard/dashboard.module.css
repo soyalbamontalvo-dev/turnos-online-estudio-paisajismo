@@ -255,7 +255,7 @@
   display: block;
   padding-top: 11px;
   border-top: 1px solid var(--line);
-  color: #7f8883;
+  color: rgba(35, 39, 42, .62);
   font-size: .67rem;
   line-height: 1.5;
 }
@@ -341,7 +341,7 @@
 }
 
 .professionalBody small {
-  color: #8a928e;
+  color: rgba(35, 39, 42, .58);
   font-size: .62rem;
 }
 
@@ -372,6 +372,18 @@
   border-color: var(--foliage);
   background: var(--foliage);
   color: white;
+}
+
+.statusFeedback {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(125, 157, 133, .35);
+  border-radius: 14px;
+  background: rgba(125, 157, 133, .12);
+  color: var(--foliage);
+  font-size: .75rem;
+  font-weight: 700;
+  line-height: 1.5;
 }
 
 .agendaList {
@@ -468,7 +480,7 @@
 
 .status_pendiente {
   background: rgba(184, 93, 56, .12);
-  color: #8b442b;
+  color: var(--terracotta);
 }
 
 .status_ausente {
@@ -478,13 +490,13 @@
 
 .status_cancelado {
   background: rgba(35, 39, 42, .055);
-  color: #838987;
+  color: rgba(35, 39, 42, .56);
   text-decoration: line-through;
 }
 
 .agendaProfessional {
   display: grid;
-  gap: 2px;
+  gap: 4px;
   padding-top: 10px;
   border-top: 1px solid var(--line);
 }
@@ -498,6 +510,33 @@
 .agendaProfessional strong {
   color: var(--foliage);
   font-size: .76rem;
+}
+
+.statusEditor {
+  display: grid;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.statusEditor > span {
+  color: var(--muted);
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.statusEditor select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--charcoal);
+  font-family: var(--font-jakarta), sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
 }
 
 .demoNote {
@@ -535,7 +574,7 @@
   .serviceVisualCard img { aspect-ratio: 4 / 3.1; }
   .professionalGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .professionalCard img { aspect-ratio: 4 / 3.2; }
-  .agendaItem { grid-template-columns: 110px minmax(0, 1fr) 160px; align-items: center; gap: 18px; padding: 17px 19px; }
+  .agendaItem { grid-template-columns: 110px minmax(0, 1fr) 170px; align-items: center; gap: 18px; padding: 17px 19px; }
   .agendaWhen { display: grid; justify-content: start; padding: 0; border: 0; }
   .agendaProfessional { padding: 0; border: 0; }
 }
@@ -543,5 +582,5 @@
 @media (min-width: 1020px) {
   .serviceVisualCard img { aspect-ratio: 4 / 2.8; }
   .professionalCard img { aspect-ratio: 4 / 3; }
-  .agendaItem { grid-template-columns: 125px minmax(0, 1fr) 190px; }
+  .agendaItem { grid-template-columns: 125px minmax(0, 1fr) 200px; }
 }
