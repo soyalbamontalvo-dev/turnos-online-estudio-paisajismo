@@ -125,6 +125,8 @@ Al cargar sin datos guardados se restauran los datos iniciales de demostración.
 - Titulares, números y destacados: **Outfit**
 - Lectura, formularios, controles y tablas: **Plus Jakarta Sans**
 
+Los mismos colores se exponen también como tokens de tema de Tailwind CSS para que la migración de estilos sea progresiva y consistente.
+
 ## Funcionalidades previstas en siguientes fases
 
 Todavía no se incluyen:
@@ -148,12 +150,21 @@ El encargo actual no contempla pago en línea, por lo que no existe flujo de pag
 
 ## Tecnología
 
-- Next.js
-- React
-- TypeScript
-- `localStorage`
-- GitHub
-- Vercel
+Stack solicitado por el cliente y utilizado en el proyecto:
+
+- **React 19**
+- **Tailwind CSS 4**
+
+Infraestructura y herramientas complementarias:
+
+- Next.js 16 como framework React.
+- TypeScript.
+- `localStorage` para la persistencia de la demo.
+- PostCSS para la integración de Tailwind CSS.
+- GitHub como repositorio y fuente de verdad.
+- Vercel para compilación y previsualización.
+
+Tailwind CSS se ha incorporado de forma progresiva para preservar la interfaz ya construida. Durante la transición puede convivir con CSS global y CSS Modules; las nuevas piezas y las migraciones posteriores utilizarán el sistema Tailwind y sus tokens de diseño.
 
 ## Ejecutar el proyecto en local
 
@@ -170,6 +181,6 @@ http://localhost:3000
 
 ## Estado del proyecto
 
-**Fase 7 — Edición de estados y recálculo automático de no-show.**
+**Fase 8 — Adecuación al stack React + Tailwind CSS y revisión técnica del flujo existente.**
 
-El proyecto se desarrolla por fases. Cada fase se revisa antes de continuar para comprobar funcionalidad, responsive mobile-first, identidad visual y cumplimiento de los criterios de aceptación.
+El proyecto se desarrolla por fases. Cada fase se revisa antes de continuar para comprobar funcionalidad, responsive mobile-first, identidad visual, experiencia de usuario y cumplimiento de los criterios de aceptación.
