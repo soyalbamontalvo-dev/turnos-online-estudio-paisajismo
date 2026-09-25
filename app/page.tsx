@@ -18,6 +18,7 @@ const timeSlots = ["09:00", "10:30", "12:00", "14:00", "15:30", "17:00"];
 const STORAGE_KEY = "paisajismo-booking-draft";
 const APPOINTMENTS_KEY = "paisajismo-demo-appointments";
 const BLOCKS_KEY = "paisajismo-demo-blocks";
+const STUDIO_TIME_ZONE = "America/Tegucigalpa";
 
 type Draft = { serviceId: string; professionalId: string; date: string; time: string };
 type DemoAppointment = {
@@ -39,6 +40,15 @@ function addDays(date: Date, amount: number) { const next = new Date(date); next
 function startOfWeek(date: Date) {
   const start = new Date(date); const day = start.getDay(); const difference = day === 0 ? -6 : 1 - day;
   start.setDate(start.getDate() + difference); start.setHours(0, 0, 0, 0); return start;
+}
+function getStudioNow() {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: STUDIO_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.filter((part) => part.type !== "literal").map((part) => [part.type, part.value]));
+  return { dateKey: `${values.year}-${values.month}-${values.day}`, time: `${values.hour}:${values.minute}` };
+}
+function isPastSlot(dateKey: string, time: string) {
+  const now = getStudioNow();
+  return dateKey < now.dateKey || (dateKey === now.dateKey && time <= now.time);
 }
 function createDemoAppointments(monday: Date): DemoAppointment[] {
   return [
@@ -69,8 +79,9 @@ export default function HomePage() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const monday = startOfWeek(today); const currentTodayKey = toDateKey(today); const currentMondayKey = toDateKey(monday);
+    const studioNow = getStudioNow();
+    const today = fromDateKey(studioNow.dateKey);
+    const monday = startOfWeek(today); const currentTodayKey = studioNow.dateKey; const currentMondayKey = toDateKey(monday);
     setTodayKey(currentTodayKey); setBaseMondayKey(currentMondayKey);
 
     let demoAppointments = createDemoAppointments(monday);
@@ -94,7 +105,7 @@ export default function HomePage() {
           const draftDate = fromDateKey(draft.date);
           const diffDays = Math.round((draftDate.getTime() - monday.getTime()) / 86400000);
           const draftWeekOffset = Math.max(0, Math.floor(diffDays / 7));
-          if (draftWeekOffset <= 4) { setWeekOffset(draftWeekOffset); setSelectedDate(draft.date); if (draft.time && timeSlots.includes(draft.time)) setSelectedTime(draft.time); }
+          if (draftWeekOffset <= 4) { setWeekOffset(draftWeekOffset); setSelectedDate(draft.date); if (draft.time && timeSlots.includes(draft.time) && !isPastSlot(draft.date, draft.time)) setSelectedTime(draft.time); }
         }
       } catch { window.localStorage.removeItem(STORAGE_KEY); }
     }
@@ -123,7 +134,7 @@ export default function HomePage() {
     return new Set(appointments.filter((a) => a.professionalId === professionalId && a.date === selectedDate && a.status !== "cancelado").map((a) => a.time));
   }, [appointments, professionalId, selectedDate]);
 
-  useEffect(() => { if (selectedTime && (occupiedTimes.has(selectedTime) || blockedTimes.has(selectedTime))) setSelectedTime(""); }, [blockedTimes, occupiedTimes, selectedTime]);
+  useEffect(() => { if (selectedTime && (occupiedTimes.has(selectedTime) || blockedTimes.has(selectedTime) || isPastSlot(selectedDate, selectedTime))) setSelectedTime(""); }, [blockedTimes, occupiedTimes, selectedDate, selectedTime]);
   useEffect(() => { if (ready) window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ serviceId, professionalId, date: selectedDate, time: selectedTime } satisfies Draft)); }, [serviceId, professionalId, selectedDate, selectedTime, ready]);
 
   const weekLabel = useMemo(() => {
@@ -145,6 +156,7 @@ export default function HomePage() {
   function submitBooking(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setFormError("");
     if (!selectedDate || !selectedTime) return setFormError("Selecciona primero un día y una hora disponibles.");
+    if (isPastSlot(selectedDate, selectedTime)) { setSelectedTime(""); return setFormError("Ese horario ya ha pasado en Tegucigalpa. Elige otro turno disponible."); }
     if (!form.name.trim() || !form.phone.trim() || !form.email.trim()) return setFormError("Completa nombre, teléfono y correo para confirmar la reserva.");
 
     let latestAppointments = appointments; let latestBlocks = blocks;
@@ -195,8 +207,8 @@ export default function HomePage() {
         {!ready || !weekStart ? <div className="calendar-loading">Preparando disponibilidad…</div> : <>
           <div className="week-toolbar" aria-label="Navegación semanal"><button type="button" className="week-nav-button" onClick={() => changeWeek(-1)} disabled={weekOffset === 0}>←</button><div><span>Semana</span><strong>{weekLabel}</strong></div><button type="button" className="week-nav-button" onClick={() => changeWeek(1)} disabled={weekOffset === 4}>→</button></div>
           <div className="day-strip">{weekDays.map((date) => { const key = toDateKey(date); const active = key === selectedDate; return <button type="button" className={`day-button ${active ? "is-active" : ""}`} key={key} disabled={key < todayKey} onClick={() => selectDay(date)}><span>{date.toLocaleDateString("es-ES", { weekday: "short" }).replace(".", "")}</span><strong>{date.getDate()}</strong><small>{date.toLocaleDateString("es-ES", { month: "short" }).replace(".", "")}</small></button>; })}</div>
-          <div className="availability-heading"><div><span>Horarios de {selectedProfessional.name}</span><strong>{selectedDateLabel}</strong></div><span className="availability-note">Citas ocupadas y bloqueos internos no se pueden seleccionar</span></div>
-          <div className="slot-grid">{timeSlots.map((time) => { const occupied = occupiedTimes.has(time); const blocked = blockedTimes.has(time); const active = selectedTime === time; return <button key={time} type="button" className={`slot-button ${active ? "is-active" : ""}`} disabled={occupied || blocked} aria-pressed={active} onClick={() => { setSelectedTime(time); setConfirmedAppointment(null); }}>{time}<span>{blocked ? "Bloqueado" : occupied ? "Ocupado" : active ? "Elegido" : "Disponible"}</span></button>; })}</div>
+          <div className="availability-heading"><div><span>Horarios de {selectedProfessional.name}</span><strong>{selectedDateLabel}</strong></div><span className="availability-note">Horarios pasados, citas ocupadas y bloqueos internos no se pueden seleccionar</span></div>
+          <div className="slot-grid">{timeSlots.map((time) => { const occupied = occupiedTimes.has(time); const blocked = blockedTimes.has(time); const past = !!selectedDate && isPastSlot(selectedDate, time); const active = selectedTime === time; return <button key={time} type="button" className={`slot-button ${active ? "is-active" : ""}`} disabled={occupied || blocked || past} aria-pressed={active} onClick={() => { setSelectedTime(time); setConfirmedAppointment(null); }}>{time}<span>{past ? "Pasado" : blocked ? "Bloqueado" : occupied ? "Ocupado" : active ? "Elegido" : "Disponible"}</span></button>; })}</div>
         </>}
       </section>
 
