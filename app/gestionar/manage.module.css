@@ -123,6 +123,26 @@
 .detail strong { display: block; margin-top: 5px; color: var(--foliage); font-size: .78rem; line-height: 1.4; overflow-wrap: anywhere; }
 .actions { display: grid; gap: 9px; margin-top: 18px; }
 
+.cancelConfirm {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid rgba(184,93,56,.24);
+  border-radius: 16px;
+  background: rgba(184,93,56,.07);
+}
+
+.cancelConfirm p {
+  margin: 0;
+  color: var(--charcoal);
+  font-size: .78rem;
+  line-height: 1.55;
+}
+
+.cancelConfirm strong { color: var(--terracotta); }
+.cancelConfirmActions { display: grid; gap: 8px; }
+
 .reschedule { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
 .reschedule h3 { margin: 0; color: var(--foliage); font-family: var(--font-outfit), sans-serif; font-size: 1.08rem; }
 .reschedule p { margin: 5px 0 14px; color: var(--muted); font-size: .75rem; line-height: 1.5; }
@@ -153,6 +173,8 @@
   .primary { min-width: 170px; }
   .details { grid-template-columns: repeat(4,minmax(0,1fr)); }
   .actions { grid-template-columns: repeat(2, max-content); }
+  .cancelConfirm { grid-template-columns: minmax(0,1fr) auto; align-items: center; }
+  .cancelConfirmActions { grid-template-columns: repeat(2, max-content); }
   .days { grid-auto-flow: initial; grid-template-columns: repeat(6,1fr); overflow: visible; }
   .slots { grid-template-columns: repeat(3,1fr); }
   .rescheduleActions { grid-template-columns: max-content max-content; }
