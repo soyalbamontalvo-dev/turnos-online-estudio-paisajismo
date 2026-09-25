@@ -5,6 +5,7 @@ import styles from "./manage.module.css";
 
 const APPOINTMENTS_KEY = "paisajismo-demo-appointments";
 const BLOCKS_KEY = "paisajismo-demo-blocks";
+const STUDIO_TIME_ZONE = "America/Tegucigalpa";
 const timeSlots = ["09:00", "10:30", "12:00", "14:00", "15:30", "17:00"];
 
 const services = {
@@ -25,6 +26,15 @@ function toDateKey(date: Date) { return `${date.getFullYear()}-${String(date.get
 function fromDateKey(key: string) { const [year, month, day] = key.split("-").map(Number); return new Date(year, month - 1, day); }
 function addDays(date: Date, amount: number) { const next = new Date(date); next.setDate(next.getDate() + amount); return next; }
 function startOfWeek(date: Date) { const start = new Date(date); const day = start.getDay(); start.setDate(start.getDate() + (day === 0 ? -6 : 1 - day)); start.setHours(0, 0, 0, 0); return start; }
+function getStudioNow() {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: STUDIO_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.filter((part) => part.type !== "literal").map((part) => [part.type, part.value]));
+  return { dateKey: `${values.year}-${values.month}-${values.day}`, time: `${values.hour}:${values.minute}` };
+}
+function isPastSlot(dateKey: string, time: string) {
+  const now = getStudioNow();
+  return dateKey < now.dateKey || (dateKey === now.dateKey && time <= now.time);
+}
 function createDemoAppointments(monday: Date): DemoAppointment[] {
   return [
     { id: "demo-01", code: "DEMO01", clientName: "Camila Paredes", serviceId: "diagnostico", professionalId: "lucia", date: toDateKey(addDays(monday, 2)), time: "10:30", status: "confirmado" },
@@ -51,9 +61,9 @@ export default function ManageBookingPage() {
   const [todayKey, setTodayKey] = useState("");
 
   useEffect(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    setTodayKey(toDateKey(today));
+    const studioNow = getStudioNow();
+    const today = fromDateKey(studioNow.dateKey);
+    setTodayKey(studioNow.dateKey);
 
     let initialAppointments: DemoAppointment[];
     const stored = window.localStorage.getItem(APPOINTMENTS_KEY);
@@ -136,13 +146,16 @@ export default function ManageBookingPage() {
   function startReprogramming() {
     if (!managed || managed.status === "cancelado") return;
     setError(""); setMessage(""); setConfirmingCancel(false);
-    setNewDate(managed.date >= todayKey ? managed.date : todayKey);
-    setNewTime(managed.time);
+    const initialDate = managed.date >= todayKey ? managed.date : todayKey;
+    const initialTime = managed.date >= todayKey && !isPastSlot(managed.date, managed.time) ? managed.time : "";
+    setNewDate(initialDate);
+    setNewTime(initialTime);
     setReprogramming(true);
   }
 
   function saveReprogramming() {
     if (!managed || !newDate || !newTime) return setError("Selecciona una nueva fecha y hora.");
+    if (isPastSlot(newDate, newTime)) { setNewTime(""); return setError("Ese horario ya ha pasado en Tegucigalpa. Elige otro turno disponible."); }
     if (newDate === managed.date && newTime === managed.time) return setError("Elige una fecha u hora diferente para reprogramar la cita.");
 
     let latest = appointments; let latestBlocks = blocks;
@@ -175,7 +188,7 @@ export default function ManageBookingPage() {
 
         {confirmingCancel && managed.status !== "cancelado" && <div className={styles.cancelConfirm} role="alertdialog" aria-label="Confirmar cancelación"><p><strong>¿Cancelar esta cita?</strong><br />El horario quedará libre inmediatamente para otra reserva.</p><div className={styles.cancelConfirmActions}><button className={styles.danger} type="button" onClick={cancelBooking}>Sí, cancelar cita</button><button className={styles.secondary} type="button" onClick={() => setConfirmingCancel(false)}>No, mantener cita</button></div></div>}
 
-        {reprogramming && managed.status !== "cancelado" && <div className={styles.reschedule}><h3>Elige un nuevo horario</h3><p>Los turnos ocupados o bloqueados por el estudio no están disponibles.</p><div className={styles.days}>{availableDays.map((date) => { const key = toDateKey(date); return <button key={key} type="button" className={`${styles.day} ${key === newDate ? styles.dayActive : ""}`} onClick={() => { setNewDate(key); setNewTime(""); setError(""); }}><span>{date.toLocaleDateString("es-ES", { weekday: "short" }).replace(".", "")}</span><strong>{date.getDate()}</strong><small>{date.toLocaleDateString("es-ES", { month: "short" }).replace(".", "")}</small></button>; })}</div><div className={styles.slots}>{timeSlots.map((time) => { const occupied = appointmentTimes.has(time); const blocked = blockedTimes.has(time); const active = newTime === time; return <button key={time} type="button" disabled={occupied || blocked} className={`${styles.slot} ${active ? styles.slotActive : ""}`} onClick={() => { setNewTime(time); setError(""); }}><strong>{time}</strong><span>{blocked ? "Bloqueado" : occupied ? "Ocupado" : active ? "Elegido" : "Disponible"}</span></button>; })}</div><div className={styles.rescheduleActions}><button className={styles.primary} type="button" onClick={saveReprogramming} disabled={!newDate || !newTime || unchangedSchedule}>Guardar nuevo horario</button><button className={styles.secondary} type="button" onClick={() => { setReprogramming(false); setError(""); }}>Cancelar cambio</button></div></div>}
+        {reprogramming && managed.status !== "cancelado" && <div className={styles.reschedule}><h3>Elige un nuevo horario</h3><p>Los horarios pasados, ocupados o bloqueados por el estudio no están disponibles.</p><div className={styles.days}>{availableDays.map((date) => { const key = toDateKey(date); return <button key={key} type="button" className={`${styles.day} ${key === newDate ? styles.dayActive : ""}`} onClick={() => { setNewDate(key); setNewTime(""); setError(""); }}><span>{date.toLocaleDateString("es-ES", { weekday: "short" }).replace(".", "")}</span><strong>{date.getDate()}</strong><small>{date.toLocaleDateString("es-ES", { month: "short" }).replace(".", "")}</small></button>; })}</div><div className={styles.slots}>{timeSlots.map((time) => { const occupied = appointmentTimes.has(time); const blocked = blockedTimes.has(time); const past = !!newDate && isPastSlot(newDate, time); const active = newTime === time; return <button key={time} type="button" disabled={occupied || blocked || past} className={`${styles.slot} ${active ? styles.slotActive : ""}`} onClick={() => { setNewTime(time); setError(""); }}><strong>{time}</strong><span>{past ? "Pasado" : blocked ? "Bloqueado" : occupied ? "Ocupado" : active ? "Elegido" : "Disponible"}</span></button>; })}</div><div className={styles.rescheduleActions}><button className={styles.primary} type="button" onClick={saveReprogramming} disabled={!newDate || !newTime || unchangedSchedule}>Guardar nuevo horario</button><button className={styles.secondary} type="button" onClick={() => { setReprogramming(false); setError(""); }}>Cancelar cambio</button></div></div>}
       </section>}
     </main>
   );
