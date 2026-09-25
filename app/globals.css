@@ -7,8 +7,11 @@
   --color-sage: #7d9d85;
   --color-charcoal: #23272a;
   --color-surface: #fffdf8;
-  --font-outfit: var(--font-outfit);
-  --font-jakarta: var(--font-jakarta);
+}
+
+@theme inline {
+  --font-heading: var(--font-outfit);
+  --font-body: var(--font-jakarta);
 }
 
 :root {
