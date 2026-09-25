@@ -91,7 +91,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
 .week-nav-button { width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--foliage); font-size: 1.1rem; font-weight: 800; }
 .week-nav-button:disabled { opacity: .3; }
 
-.day-strip { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(72px, 1fr); gap: 8px; overflow-x: auto; padding: 2px 1px 8px; scroll-snap-type: x proximity; scrollbar-width: none; }
+.day-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; overflow-x: auto; padding: 2px 1px 8px; scroll-snap-type: x proximity; scrollbar-width: none; }
 .day-strip::-webkit-scrollbar { display: none; }
 .day-button { min-height: 90px; padding: 10px 8px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); color: var(--foliage); scroll-snap-align: start; }
 .day-button span, .day-button small { display: block; color: var(--muted); font-size: .7rem; text-transform: capitalize; }

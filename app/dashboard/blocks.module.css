@@ -159,3 +159,5 @@
   .fieldReason { grid-column: span 2; }
   .blockItem { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
 }
+
+.blockMeta { min-width: 0; overflow-wrap: anywhere; }

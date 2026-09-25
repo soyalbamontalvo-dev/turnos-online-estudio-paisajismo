@@ -117,6 +117,24 @@ export default function DashboardPage() {
     setWeekStartKey(toDateKey(monday));
     setBlockForm((current) => ({ ...current, date: studioNow.dateKey }));
     setReady(true);
+    const syncAgenda = () => {
+      try {
+        const latestAppointments = JSON.parse(window.localStorage.getItem(APPOINTMENTS_KEY) || "[]");
+        const latestBlocks = JSON.parse(window.localStorage.getItem(BLOCKS_KEY) || "[]");
+        if (!Array.isArray(latestAppointments) || !Array.isArray(latestBlocks)) return;
+        setAppointments(latestAppointments);
+        setBlocks(latestBlocks);
+      } catch { /* Keep the current view if storage cannot be read. */ }
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === null || event.key === APPOINTMENTS_KEY || event.key === BLOCKS_KEY) syncAgenda();
+    };
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("focus", syncAgenda);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("focus", syncAgenda);
+    };
   }, []);
 
   const weekEndKey = useMemo(() => weekStartKey ? toDateKey(addDays(fromDateKey(weekStartKey), 6)) : "", [weekStartKey]);
@@ -152,7 +170,9 @@ export default function DashboardPage() {
   }
 
   function updateStatus(id: string, status: Status) {
-    const current = appointments.find((appointment) => appointment.id === id);
+    const latest = readLatestAgenda();
+    if (!latest) return setStatusMessage("No se pudo leer la agenda. Recarga la página antes de cambiar estados.");
+    const current = latest.appointments.find((appointment) => appointment.id === id);
     if (!current || current.status === status) return;
 
     if (status === "ausente" && !isPastSlot(current.date, current.time)) {
@@ -161,17 +181,29 @@ export default function DashboardPage() {
     }
 
     if (status !== "cancelado") {
-      const appointmentConflict = appointments.some((appointment) => appointment.id !== id && appointment.professionalId === current.professionalId && appointment.date === current.date && appointment.time === current.time && appointment.status !== "cancelado");
-      const blockConflict = blocks.some((block) => block.professionalId === current.professionalId && block.date === current.date && block.time === current.time);
+      const appointmentConflict = latest.appointments.some((appointment) => appointment.id !== id && appointment.professionalId === current.professionalId && appointment.date === current.date && appointment.time === current.time && appointment.status !== "cancelado");
+      const blockConflict = latest.blocks.some((block) => block.professionalId === current.professionalId && block.date === current.date && block.time === current.time);
       if (appointmentConflict || blockConflict) {
         setStatusMessage("No se puede reactivar esa cita porque el horario ya está ocupado o bloqueado.");
         return;
       }
     }
 
-    const next = appointments.map((appointment) => appointment.id === id ? { ...appointment, status } : appointment);
+    const next = latest.appointments.map((appointment) => appointment.id === id ? { ...appointment, status } : appointment);
     saveAppointments(next);
     setStatusMessage(status === "ausente" ? "Cita marcada como ausente. La estadística de no-show se ha recalculado automáticamente." : `Estado actualizado a ${status}.`);
+  }
+
+  // Read again at mutation time: a storage event from another tab may still be queued.
+  function readLatestAgenda() {
+    try {
+      const latestAppointments = JSON.parse(window.localStorage.getItem(APPOINTMENTS_KEY) || "[]") as DemoAppointment[];
+      const latestBlocks = JSON.parse(window.localStorage.getItem(BLOCKS_KEY) || "[]") as AvailabilityBlock[];
+      if (!Array.isArray(latestAppointments) || !Array.isArray(latestBlocks)) return null;
+      setAppointments(latestAppointments);
+      setBlocks(latestBlocks);
+      return { appointments: latestAppointments, blocks: latestBlocks };
+    } catch { return null; }
   }
 
   function saveBlocks(next: AvailabilityBlock[]) { window.localStorage.setItem(BLOCKS_KEY, JSON.stringify(next)); setBlocks(next); }
@@ -182,17 +214,21 @@ export default function DashboardPage() {
     if (!blockForm.date || !blockForm.time || !blockForm.reason.trim()) return setBlockError("Completa profesional, fecha, hora y motivo del bloqueo.");
     if (blockForm.date < todayKey) return setBlockError("No puedes crear un bloqueo en una fecha pasada.");
     if (isPastSlot(blockForm.date, blockForm.time)) return setBlockError("No puedes bloquear un horario que ya ha pasado en Tegucigalpa.");
-    const appointmentConflict = appointments.some((a) => a.professionalId === blockForm.professionalId && a.date === blockForm.date && a.time === blockForm.time && a.status !== "cancelado");
-    const duplicate = blocks.some((b) => b.professionalId === blockForm.professionalId && b.date === blockForm.date && b.time === blockForm.time);
+    const latest = readLatestAgenda();
+    if (!latest) return setBlockError("No se pudo leer la agenda. Recarga la página antes de crear bloqueos.");
+    const appointmentConflict = latest.appointments.some((a) => a.professionalId === blockForm.professionalId && a.date === blockForm.date && a.time === blockForm.time && a.status !== "cancelado");
+    const duplicate = latest.blocks.some((b) => b.professionalId === blockForm.professionalId && b.date === blockForm.date && b.time === blockForm.time);
     if (appointmentConflict) return setBlockError("Ese horario ya contiene una cita activa. Elige otro hueco.");
     if (duplicate) return setBlockError("Ese horario ya está bloqueado para este profesional.");
-    const next = [...blocks, { id: `block-${Date.now()}`, professionalId: blockForm.professionalId, date: blockForm.date, time: blockForm.time, reason: blockForm.reason.trim(), createdAt: new Date().toISOString() }];
+    const next = [...latest.blocks, { id: `block-${Date.now()}`, professionalId: blockForm.professionalId, date: blockForm.date, time: blockForm.time, reason: blockForm.reason.trim(), createdAt: new Date().toISOString() }];
     saveBlocks(next);
     setBlockMessage("Bloqueo creado. El turno deja de estar disponible para reserva y reprogramación.");
     setBlockForm((current) => ({ ...current, reason: "" }));
   }
   function removeBlock(id: string) {
-    saveBlocks(blocks.filter((block) => block.id !== id));
+    const latest = readLatestAgenda();
+    if (!latest) return setBlockError("No se pudo leer la agenda. Recarga la página antes de eliminar bloqueos.");
+    saveBlocks(latest.blocks.filter((block) => block.id !== id));
     setBlockMessage("Bloqueo eliminado. El horario vuelve a quedar disponible si no existe una cita.");
     setBlockError("");
   }
