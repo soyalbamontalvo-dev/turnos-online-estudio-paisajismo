@@ -122,9 +122,20 @@ export default function HomePage() {
   const weekDays = useMemo(() => weekStart ? Array.from({ length: 6 }, (_, index) => addDays(weekStart, index)) : [], [weekStart]);
   useEffect(() => {
     if (!ready || !weekStart || selectedDate) return;
-    const firstAvailableDay = weekDays.find((date) => toDateKey(date) >= todayKey);
-    if (firstAvailableDay) setSelectedDate(toDateKey(firstAvailableDay));
-  }, [ready, selectedDate, todayKey, weekDays, weekStart]);
+    const firstBookableDay = weekDays.find((date) => {
+      const key = toDateKey(date);
+      return key >= todayKey && timeSlots.some((time) => !isPastSlot(key, time));
+    });
+    if (firstBookableDay) {
+      setSelectedDate(toDateKey(firstBookableDay));
+      return;
+    }
+    if (weekOffset < 4) {
+      const nextWeekStart = addDays(weekStart, 7);
+      setWeekOffset(weekOffset + 1);
+      setSelectedDate(toDateKey(nextWeekStart));
+    }
+  }, [ready, selectedDate, todayKey, weekDays, weekOffset, weekStart]);
 
   const selectedService = useMemo(() => services.find((item) => item.id === serviceId) ?? services[0], [serviceId]);
   const selectedProfessional = useMemo(() => professionals.find((item) => item.id === professionalId) ?? professionals[0], [professionalId]);
@@ -148,8 +159,8 @@ export default function HomePage() {
     const nextOffset = Math.min(4, Math.max(0, weekOffset + direction)); if (nextOffset === weekOffset || !baseMondayKey) return;
     const nextWeekStart = addDays(fromDateKey(baseMondayKey), nextOffset * 7);
     const candidates = Array.from({ length: 6 }, (_, index) => addDays(nextWeekStart, index));
-    const firstAvailable = candidates.find((date) => toDateKey(date) >= todayKey) ?? candidates[0];
-    setWeekOffset(nextOffset); setSelectedDate(toDateKey(firstAvailable)); setSelectedTime("");
+    const firstAvailable = candidates.find((date) => toDateKey(date) >= todayKey && timeSlots.some((time) => !isPastSlot(toDateKey(date), time)));
+    setWeekOffset(nextOffset); setSelectedDate(firstAvailable ? toDateKey(firstAvailable) : ""); setSelectedTime("");
   }
   function selectDay(date: Date) { const key = toDateKey(date); if (key < todayKey) return; setSelectedDate(key); setSelectedTime(""); }
 
