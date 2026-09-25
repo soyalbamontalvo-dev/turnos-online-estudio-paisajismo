@@ -6,6 +6,7 @@ import blockStyles from "./blocks.module.css";
 
 const APPOINTMENTS_KEY = "paisajismo-demo-appointments";
 const BLOCKS_KEY = "paisajismo-demo-blocks";
+const STUDIO_TIME_ZONE = "America/Tegucigalpa";
 const timeSlots = ["09:00", "10:30", "12:00", "14:00", "15:30", "17:00"];
 
 const services = {
@@ -52,6 +53,15 @@ function fromDateKey(key: string) { const [year, month, day] = key.split("-").ma
 function addDays(date: Date, amount: number) { const next = new Date(date); next.setDate(next.getDate() + amount); return next; }
 function startOfWeek(date: Date) { const start = new Date(date); const day = start.getDay(); start.setDate(start.getDate() + (day === 0 ? -6 : 1 - day)); start.setHours(0, 0, 0, 0); return start; }
 function formatDate(key: string) { return fromDateKey(key).toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" }); }
+function getStudioNow() {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: STUDIO_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.filter((part) => part.type !== "literal").map((part) => [part.type, part.value]));
+  return { dateKey: `${values.year}-${values.month}-${values.day}`, time: `${values.hour}:${values.minute}` };
+}
+function isPastSlot(dateKey: string, time: string) {
+  const now = getStudioNow();
+  return dateKey < now.dateKey || (dateKey === now.dateKey && time <= now.time);
+}
 
 function createRichSeed(monday: Date): DemoAppointment[] {
   return [
@@ -80,8 +90,8 @@ export default function DashboardPage() {
   const [statusMessage, setStatusMessage] = useState("");
 
   useEffect(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const studioNow = getStudioNow();
+    const today = fromDateKey(studioNow.dateKey);
     const monday = startOfWeek(today);
     const seed = createRichSeed(monday);
     let existing: DemoAppointment[] = [];
@@ -103,10 +113,9 @@ export default function DashboardPage() {
       window.localStorage.setItem(BLOCKS_KEY, JSON.stringify(currentBlocks));
     }
     setBlocks(currentBlocks);
-    const todayDateKey = toDateKey(today);
-    setTodayKey(todayDateKey);
+    setTodayKey(studioNow.dateKey);
     setWeekStartKey(toDateKey(monday));
-    setBlockForm((current) => ({ ...current, date: todayDateKey }));
+    setBlockForm((current) => ({ ...current, date: studioNow.dateKey }));
     setReady(true);
   }, []);
 
@@ -115,13 +124,14 @@ export default function DashboardPage() {
     if (!weekStartKey || !weekEndKey) return { today: 0, week: 0, pending: 0, absent: 0, noShowRate: 0 };
     const inWeek = appointments.filter((item) => item.date >= weekStartKey && item.date <= weekEndKey);
     const active = inWeek.filter((item) => item.status !== "cancelado");
-    const absent = active.filter((item) => item.status === "ausente").length;
+    const eligibleNoShow = active.filter((item) => isPastSlot(item.date, item.time) && item.status !== "pendiente");
+    const absent = eligibleNoShow.filter((item) => item.status === "ausente").length;
     return {
       today: active.filter((item) => item.date === todayKey).length,
       week: active.length,
       pending: active.filter((item) => item.status === "pendiente").length,
       absent,
-      noShowRate: active.length ? Math.round((absent / active.length) * 100) : 0,
+      noShowRate: eligibleNoShow.length ? Math.round((absent / eligibleNoShow.length) * 100) : 0,
     };
   }, [appointments, todayKey, weekEndKey, weekStartKey]);
 
@@ -133,7 +143,7 @@ export default function DashboardPage() {
       .sort((a, b) => `${a.date}-${a.time}`.localeCompare(`${b.date}-${b.time}`));
   }, [appointments, professionalFilter, weekStartKey]);
 
-  const visibleBlocks = useMemo(() => blocks.filter((block) => block.date >= todayKey).sort((a, b) => `${a.date}-${a.time}`.localeCompare(`${b.date}-${b.time}`)), [blocks, todayKey]);
+  const visibleBlocks = useMemo(() => blocks.filter((block) => !isPastSlot(block.date, block.time)).sort((a, b) => `${a.date}-${a.time}`.localeCompare(`${b.date}-${b.time}`)), [blocks]);
   const weekLabel = weekStartKey ? `${formatDate(weekStartKey)} — ${formatDate(weekEndKey)}` : "";
 
   function saveAppointments(next: DemoAppointment[]) {
@@ -144,6 +154,11 @@ export default function DashboardPage() {
   function updateStatus(id: string, status: Status) {
     const current = appointments.find((appointment) => appointment.id === id);
     if (!current || current.status === status) return;
+
+    if (status === "ausente" && !isPastSlot(current.date, current.time)) {
+      setStatusMessage("Solo puedes marcar como ausente una cita cuyo horario ya haya pasado en Tegucigalpa.");
+      return;
+    }
 
     if (status !== "cancelado") {
       const appointmentConflict = appointments.some((appointment) => appointment.id !== id && appointment.professionalId === current.professionalId && appointment.date === current.date && appointment.time === current.time && appointment.status !== "cancelado");
@@ -166,6 +181,7 @@ export default function DashboardPage() {
     setBlockMessage("");
     if (!blockForm.date || !blockForm.time || !blockForm.reason.trim()) return setBlockError("Completa profesional, fecha, hora y motivo del bloqueo.");
     if (blockForm.date < todayKey) return setBlockError("No puedes crear un bloqueo en una fecha pasada.");
+    if (isPastSlot(blockForm.date, blockForm.time)) return setBlockError("No puedes bloquear un horario que ya ha pasado en Tegucigalpa.");
     const appointmentConflict = appointments.some((a) => a.professionalId === blockForm.professionalId && a.date === blockForm.date && a.time === blockForm.time && a.status !== "cancelado");
     const duplicate = blocks.some((b) => b.professionalId === blockForm.professionalId && b.date === blockForm.date && b.time === blockForm.time);
     if (appointmentConflict) return setBlockError("Ese horario ya contiene una cita activa. Elige otro hueco.");
@@ -197,7 +213,7 @@ export default function DashboardPage() {
         <article className={styles.metric}><span>Citas hoy</span><strong>{ready ? summary.today : "—"}</strong><small>Visitas activas</small></article>
         <article className={styles.metric}><span>Semana activa</span><strong>{ready ? summary.week : "—"}</strong><small>Sin cancelaciones</small></article>
         <article className={styles.metric}><span>Pendientes</span><strong>{ready ? summary.pending : "—"}</strong><small>Por confirmar</small></article>
-        <article className={styles.metric}><span>No-show</span><strong>{ready ? `${summary.noShowRate}%` : "—"}</strong><small>{ready ? `${summary.absent} ausencia${summary.absent === 1 ? "" : "s"} registrada${summary.absent === 1 ? "" : "s"}` : "Inasistencias"}</small></article>
+        <article className={styles.metric}><span>No-show</span><strong>{ready ? `${summary.noShowRate}%` : "—"}</strong><small>{ready ? `${summary.absent} ausencia${summary.absent === 1 ? "" : "s"} en citas vencidas` : "Inasistencias"}</small></article>
       </section>
 
       <section className={blockStyles.blockSection} aria-labelledby="blocks-title">
