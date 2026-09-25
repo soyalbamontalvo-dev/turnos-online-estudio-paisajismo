@@ -184,3 +184,26 @@ http://localhost:3000
 **Fase 8 — Adecuación al stack React + Tailwind CSS y revisión técnica del flujo existente.**
 
 El proyecto se desarrolla por fases. Cada fase se revisa antes de continuar para comprobar funcionalidad, responsive mobile-first, identidad visual, experiencia de usuario y cumplimiento de los criterios de aceptación.
+
+
+## Revisión QA — 25/09/2026
+
+Correcciones preparadas, sin nuevas funcionalidades:
+
+- La confirmación conserva la fecha de la reserva guardada aunque se navegue a otro día.
+- El panel escucha cambios de otras pestañas y vuelve a leer citas y bloqueos antes de escribir, evitando sobrescribir reservas recientes o bloquear horarios ya ocupados.
+- El calendario público muestra sus seis días en dos filas en móvil, sin ocultar viernes y sábado en un carrusel horizontal.
+- Etiquetas accesibles para navegar semanas, estado seleccionado de los días y referencia horaria de Tegucigalpa.
+- Corrección del selector CSS que alteraba el logotipo en la página de gestión, apariencia de botones deshabilitados y ajuste de textos largos.
+
+Pruebas de regresión (Node.js 22.12+):
+
+```bash
+npm ci
+npm test
+npm run build
+```
+
+Las pruebas usan React Testing Library y JSDOM: verifican confirmación, conflictos y conservación de datos entre pestañas. No sustituyen la comprobación visual en dispositivos móviles.
+
+El 25/09 se pudo navegar por la URL pública y reproducir los fallos. El conector Vercel solo mostró el proyecto `prueba-flr2` del equipo `alba-acf9`; la consulta de este proyecto devolvió 404. Queda pendiente verificar la vista móvil y los flujos corregidos en un despliegue de previsualización antes de integrar esta revisión.
