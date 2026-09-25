@@ -98,5 +98,62 @@ test('dashboard refreshes when another tab changes or clears storage', () => {
   assert.ok(screen.getByRole('heading', { name: externalBooking.clientName }));
   window.localStorage.clear();
   act(() => window.dispatchEvent(new StorageEvent('storage', { key: null })));
-  assert.equal(screen.queryByRole('heading', { name: externalBooking.clientName }), null);
+  assert.equal(!!screen.queryByRole('heading', { name: externalBooking.clientName }), false);
+});
+
+const Manage = require('../app/gestionar/page.tsx').default;
+function openReschedule() {
+  write(APPOINTMENTS, [externalBooking]);
+  render(React.createElement(Manage));
+  fireEvent.change(screen.getByLabelText('Código de reserva'), { target: { value: externalBooking.code } });
+  fireEvent.click(screen.getByRole('button', { name: 'Buscar reserva' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Reprogramar cita' }));
+  fireEvent.click(screen.getByRole('button', { name: /14:00\s*Disponible/ }));
+}
+
+test('rescheduling cannot reactivate a booking cancelled in another tab before its event arrives', () => {
+  openReschedule();
+  write(APPOINTMENTS, [{ ...externalBooking, status: 'cancelado' }]);
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar nuevo horario' }));
+  assert.equal(read(APPOINTMENTS)[0].status, 'cancelado');
+  assert.equal(read(APPOINTMENTS)[0].time, externalBooking.time);
+  assert.match(screen.getByRole('alert').textContent, /cancelada/);
+});
+
+test('rescheduling a removed booking reports the removal instead of success', () => {
+  openReschedule();
+  write(APPOINTMENTS, []);
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar nuevo horario' }));
+  assert.equal(read(APPOINTMENTS).length, 0);
+  assert.match(screen.getByRole('alert').textContent, /ya no está disponible/);
+  assert.equal(screen.queryByRole('status'), null);
+});
+
+test('managing a booking refreshes after another tab clears the demo data', () => {
+  openReschedule();
+  window.localStorage.clear();
+  act(() => window.dispatchEvent(new StorageEvent('storage', { key: null })));
+  assert.equal(!!screen.queryByRole('button', { name: 'Guardar nuevo horario' }), false);
+  assert.equal(!!screen.queryByRole('heading', { name: externalBooking.clientName }), false);
+});
+
+test('a current booking can still be rescheduled and cancelled normally', () => {
+  openReschedule();
+  fireEvent.click(screen.getByRole('button', { name: 'Guardar nuevo horario' }));
+  assert.equal(read(APPOINTMENTS)[0].time, '14:00');
+  assert.match(screen.getByRole('status').textContent, /reprogramada/);
+  fireEvent.click(screen.getByRole('button', { name: 'Cancelar cita', exact: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'Sí, cancelar cita' }));
+  assert.equal(read(APPOINTMENTS)[0].status, 'cancelado');
+});
+
+test('cancellation does not silently cancel a different schedule saved in another tab', () => {
+  openReschedule();
+  fireEvent.click(screen.getByRole('button', { name: 'Cancelar cambio' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Cancelar cita', exact: true }));
+  write(APPOINTMENTS, [{ ...externalBooking, time: '17:00' }]);
+  fireEvent.click(screen.getByRole('button', { name: 'Sí, cancelar cita' }));
+  assert.equal(read(APPOINTMENTS)[0].status, 'confirmado');
+  assert.equal(read(APPOINTMENTS)[0].time, '17:00');
+  assert.match(screen.getByRole('alert').textContent, /ha cambiado/);
 });

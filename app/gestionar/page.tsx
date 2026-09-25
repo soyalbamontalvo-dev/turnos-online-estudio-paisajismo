@@ -91,12 +91,24 @@ export default function ManageBookingPage() {
       else setError("No hemos encontrado una reserva con ese código en esta demo.");
     }
 
+    const syncAgenda = () => {
+      try {
+        const latest = JSON.parse(window.localStorage.getItem(APPOINTMENTS_KEY) || "[]");
+        const latestBlocks = JSON.parse(window.localStorage.getItem(BLOCKS_KEY) || "[]");
+        if (!Array.isArray(latest) || !Array.isArray(latestBlocks)) return;
+        setAppointments(latest);
+        setBlocks(latestBlocks);
+      } catch { /* Preserve the current view if storage cannot be read. */ }
+    };
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === APPOINTMENTS_KEY && event.newValue) { try { setAppointments(JSON.parse(event.newValue) as DemoAppointment[]); } catch {} }
-      if (event.key === BLOCKS_KEY) { try { setBlocks(event.newValue ? JSON.parse(event.newValue) as AvailabilityBlock[] : []); } catch {} }
+      if (event.key === null || event.key === APPOINTMENTS_KEY || event.key === BLOCKS_KEY) syncAgenda();
     };
     window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
+    window.addEventListener("focus", syncAgenda);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("focus", syncAgenda);
+    };
   }, []);
 
   const managed = useMemo(() => appointments.find((appointment) => appointment.id === managedId) ?? null, [appointments, managedId]);
@@ -114,6 +126,23 @@ export default function ManageBookingPage() {
   }, [blocks, managed, newDate]);
 
   function persist(next: DemoAppointment[]) { window.localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(next)); setAppointments(next); }
+
+  function validateCurrentBooking(latest: DemoAppointment[]) {
+    const current = latest.find((appointment) => appointment.id === managedId);
+    if (!current || current.status === "cancelado") {
+      setAppointments(latest);
+      setReprogramming(false); setConfirmingCancel(false); setMessage("");
+      setError(current ? "Esta reserva ya ha sido cancelada. No se ha modificado." : "Esta reserva ya no está disponible. Busca de nuevo tu cita.");
+      return null;
+    }
+    if (managed && (current.date !== managed.date || current.time !== managed.time || current.professionalId !== managed.professionalId)) {
+      setAppointments(latest);
+      setReprogramming(false); setConfirmingCancel(false); setMessage("");
+      setError("La cita ha cambiado en otra pestaña. Revisa el horario actualizado antes de continuar.");
+      return null;
+    }
+    return current;
+  }
 
   function findBooking(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -137,6 +166,7 @@ export default function ManageBookingPage() {
     if (!managed || managed.status === "cancelado") return;
     let latest = appointments;
     try { latest = JSON.parse(window.localStorage.getItem(APPOINTMENTS_KEY) || "[]") as DemoAppointment[]; } catch {}
+    if (!validateCurrentBooking(latest)) return;
     const next = latest.map((a) => a.id === managed.id ? { ...a, status: "cancelado" as const } : a);
     persist(next);
     setConfirmingCancel(false);
@@ -161,6 +191,7 @@ export default function ManageBookingPage() {
     let latest = appointments; let latestBlocks = blocks;
     try { latest = JSON.parse(window.localStorage.getItem(APPOINTMENTS_KEY) || "[]") as DemoAppointment[]; } catch {}
     try { latestBlocks = JSON.parse(window.localStorage.getItem(BLOCKS_KEY) || "[]") as AvailabilityBlock[]; } catch {}
+    if (!validateCurrentBooking(latest)) return;
     const conflict = latest.some((a) => a.id !== managed.id && a.professionalId === managed.professionalId && a.date === newDate && a.time === newTime && a.status !== "cancelado");
     const blocked = latestBlocks.some((b) => b.professionalId === managed.professionalId && b.date === newDate && b.time === newTime);
     if (conflict || blocked) {
